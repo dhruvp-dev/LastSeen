@@ -18,12 +18,14 @@ var blockedPrefixes = mustPrefixes(
 	"0.0.0.0/8", "10.0.0.0/8", "100.64.0.0/10", "127.0.0.0/8", "169.254.0.0/16",
 	"172.16.0.0/12", "192.0.0.0/24", "192.0.2.0/24", "192.168.0.0/16", "198.18.0.0/15",
 	"198.51.100.0/24", "203.0.113.0/24", "224.0.0.0/4", "240.0.0.0/4",
-	"::/128", "::1/128", "64:ff9b::/96", "100::/64", "2001:db8::/32", "fc00::/7", "fe80::/10", "ff00::/8",
+	"::/128", "::1/128", "100::/64", "2001:db8::/32", "fc00::/7", "fe80::/10", "ff00::/8",
 )
 
 var blockedHosts = map[string]bool{
 	"localhost": true, "metadata.google.internal": true, "metadata": true, "instance-data": true,
 }
+
+var nat64Prefix = netip.MustParsePrefix("64:ff9b::/96")
 
 func mustPrefixes(s ...string) []netip.Prefix {
 	out := make([]netip.Prefix, len(s))
@@ -38,6 +40,11 @@ func IsBlockedIP(ip netip.Addr) bool {
 	ip = ip.Unmap().WithZone("")
 	if !ip.IsValid() {
 		return true
+	}
+	// NAT64 (DNS64 networks): judge the IPv4 address embedded in the low 32 bits, not the wrapper.
+	if nat64Prefix.Contains(ip) {
+		b := ip.As16()
+		return IsBlockedIP(netip.AddrFrom4([4]byte{b[12], b[13], b[14], b[15]}))
 	}
 	for _, p := range blockedPrefixes {
 		if p.Contains(ip) {
