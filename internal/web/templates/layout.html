@@ -6,6 +6,7 @@
 <meta name="robots" content="noindex">
 <title>{{.Title}} · Last Seen</title>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<script src="/static/sidebar.js"></script>
 <link rel="stylesheet" href="/static/app.css">
 <meta name="htmx-config" content='{"includeIndicatorStyles":false,"allowEval":false,"allowScriptTags":false}'>
 <script src="/static/htmx.min.js" defer></script>
@@ -15,38 +16,37 @@
 <body class="bg-canvas" hx-headers='{"X-CSRF-Token":"{{.CSRF}}"}'>
 {{template "icons"}}
 <div class="md:flex min-h-screen">
-  <aside class="md:flex md:flex-col md:w-60 md:shrink-0 md:min-h-screen bg-side text-ink px-3 md:px-4">
+  <aside class="sidebar md:flex md:flex-col md:w-60 md:shrink-0 md:sticky md:top-3 md:m-3 md:mr-0 md:h-[calc(100vh-1.5rem)] md:self-start md:overflow-y-auto md:rounded-2xl md:border md:border-rule bg-paper shadow-card text-ink px-3 md:px-4">
     <div class="md:flex-1 pt-4 md:pt-5">
-      <a href="/admin" class="flex items-center gap-2.5 px-2 text-lg font-medium tracking-[-0.025em] text-ink whitespace-nowrap"><svg class="ic h-7 w-7 text-ink"><use href="#i-logo"/></svg>Last Seen</a>
+      <div class="flex items-center justify-between gap-2">
+        <a href="/admin" class="brand-link flex items-center gap-2.5 px-2 text-lg font-medium tracking-[-0.025em] text-ink whitespace-nowrap" title="Last Seen" data-brand><svg class="brand-logo ic h-7 w-7 shrink-0 text-ink"><use href="#i-logo"/></svg><span class="brand-expand" aria-hidden="true"><svg class="ic"><use href="#i-sidebar"/></svg></span><span class="nav-label">Last Seen</span></a>
+        <button type="button" class="icon-btn hidden md:inline-flex h-8 w-8 sb-toggle" data-sidebar-toggle aria-label="Collapse sidebar" aria-expanded="true" title="Collapse sidebar"><svg class="ic"><use href="#i-sidebar"/></svg></button>
+      </div>
       <nav class="mt-3 md:mt-7 pb-3 md:pb-0 -mx-1 px-1 overflow-x-auto md:overflow-visible text-sm whitespace-nowrap" aria-label="Main">
-        <p class="hidden md:block px-3 pb-1.5 text-xs text-mute">Operate</p>
+        <p class="nav-label nav-group hidden md:block px-3 pb-1.5">Operate</p>
         <div class="flex md:flex-col gap-1">
-          <a href="/admin" class="nav-link" {{if eq .Nav "overview"}}aria-current="page"{{end}}><svg class="ic"><use href="#i-dash"/></svg>Dashboard</a>
-          <a href="/admin/monitors" class="nav-link" {{if eq .Nav "monitors"}}aria-current="page"{{end}}><svg class="ic"><use href="#i-globe"/></svg>Monitors</a>
-          <a href="/admin/incidents" class="nav-link" {{if eq .Nav "incidents"}}aria-current="page"{{end}}><svg class="ic"><use href="#i-incident"/></svg>Incidents{{if .OpenIncidents}}<span class="badge ml-auto bg-red-500/15 text-red-700">{{.OpenIncidents}}</span>{{end}}</a>
+          <a href="/admin" class="nav-link" title="Dashboard" {{if eq .Nav "overview"}}aria-current="page"{{end}}><svg class="ic"><use href="#i-dash"/></svg><span class="nav-label">Dashboard</span></a>
+          <a href="/admin/monitors" class="nav-link" title="Monitors" {{if eq .Nav "monitors"}}aria-current="page"{{end}}><svg class="ic"><use href="#i-globe"/></svg><span class="nav-label">Monitors</span></a>
+          <a href="/admin/incidents" class="nav-link" title="Incidents" {{if eq .Nav "incidents"}}aria-current="page"{{end}}><svg class="ic"><use href="#i-incident"/></svg><span class="nav-label">Incidents</span>{{if .OpenIncidents}}<span class="badge nav-badge ml-auto bg-red-500/15 text-red-700">{{.OpenIncidents}}</span>{{end}}</a>
         </div>
-        <p class="hidden md:block px-3 pt-6 pb-1.5 text-xs text-mute">System</p>
+        <p class="nav-label nav-group hidden md:block px-3 pt-6 pb-1.5">System</p>
         <div class="flex md:flex-col gap-1">
-          <a href="/admin/notifications" class="nav-link" {{if eq .Nav "notifications"}}aria-current="page"{{end}}><svg class="ic"><use href="#i-bell"/></svg>Notifications</a>
-          <a href="/admin/settings" class="nav-link" {{if eq .Nav "settings"}}aria-current="page"{{end}}><svg class="ic"><use href="#i-gear"/></svg>Settings</a>
+          <a href="/admin/notifications" class="nav-link" title="Notifications" {{if eq .Nav "notifications"}}aria-current="page"{{end}}><svg class="ic"><use href="#i-bell"/></svg><span class="nav-label">Notifications</span></a>
+          <a href="/admin/settings" class="nav-link" title="Settings" {{if eq .Nav "settings"}}aria-current="page"{{end}}><svg class="ic"><use href="#i-gear"/></svg><span class="nav-label">Settings</span></a>
         </div>
       </nav>
     </div>
-    <div class="hidden md:flex items-center gap-3 px-2 py-4">
-      <span class="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-xs font-medium text-white" aria-hidden="true">{{if .AdminInitial}}{{.AdminInitial}}{{else}}A{{end}}</span>
-      <div class="min-w-0 text-sm leading-tight"><div class="truncate font-medium text-ink">{{if .AdminName}}{{.AdminName}}{{else}}Admin{{end}}</div><div class="text-xs text-mute">Signed in</div></div>
-    </div>
   </aside>
   <div class="flex-1 min-w-0 md:pr-4 pb-4">
-    <header class="flex items-center justify-between px-3 md:px-1 py-3">
-      <div class="flex items-center gap-3">
-        <a href="/admin" class="icon-btn" aria-label="Back to dashboard"><svg class="ic"><use href="#i-back"/></svg></a>
-        <span class="h-5 w-px bg-rule" aria-hidden="true"></span>
-        <h1 class="inline-flex items-center gap-2 text-sm font-medium"><svg class="ic text-mute"><use href="#i-dash"/></svg>{{.Title}}</h1>
-      </div>
-      <div class="flex items-center gap-3">
-        <span class="hidden sm:inline text-sm text-mute">Hello, <span class="font-medium text-ink">{{if .AdminName}}{{.AdminName}}{{else}}there{{end}}</span></span>
+    <header class="sticky top-0 z-20 flex items-center justify-between gap-3 bg-canvas px-3 md:px-1 py-3">
+      <nav class="flex min-w-0 items-center gap-2 text-sm" aria-label="Breadcrumb">
+        <a href="/admin" class="icon-btn" aria-label="Dashboard"><svg class="ic"><use href="#i-home"/></svg></a>
+        <svg class="ic text-mute" aria-hidden="true"><use href="#i-chevron"/></svg>
+        <h1 class="truncate font-medium">{{.Title}}</h1>
+      </nav>
+      <div class="flex items-center gap-2">
         <a href="/admin/incidents" class="icon-btn relative" aria-label="Incidents"><svg class="ic"><use href="#i-bell"/></svg>{{if .OpenIncidents}}<span class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-bad ring-2 ring-paper"></span>{{end}}</a>
+        <div class="hidden sm:flex h-9 items-center gap-2 rounded-xl border border-rule bg-paper pl-1 pr-3 text-sm"><span class="flex h-7 w-7 items-center justify-center rounded-full bg-ink text-xs font-medium text-white" aria-hidden="true">{{if .AdminInitial}}{{.AdminInitial}}{{else}}A{{end}}</span><span class="font-medium">{{if .AdminName}}{{.AdminName}}{{else}}Admin{{end}}</span></div>
         <form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{.CSRF}}"><button class="icon-btn" type="submit" aria-label="Sign out" title="Sign out"><svg class="ic"><use href="#i-logout"/></svg></button></form>
       </div>
     </header>
@@ -58,3 +58,11 @@
 <div id="modal-root"></div>
 </body>
 </html>{{end}}
+
+{{define "status_legend"}}<div class="flex flex-wrap items-center gap-x-5 gap-y-1.5 border-b border-rule bg-surface px-5 py-2.5 text-xs text-mute" aria-label="Status key">
+  <span class="font-medium text-ink">Key</span>
+  <span class="inline-flex items-center gap-2"><span class="mk mk-up"></span>Up</span>
+  <span class="inline-flex items-center gap-2"><span class="mk mk-down"></span>Down</span>
+  <span class="inline-flex items-center gap-2"><span class="mk mk-pending"></span>Pending</span>
+  <span class="inline-flex items-center gap-2"><span class="mk mk-paused"></span>Paused</span>
+</div>{{end}}
