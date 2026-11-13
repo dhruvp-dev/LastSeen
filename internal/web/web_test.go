@@ -1,6 +1,7 @@
 package web
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -10,7 +11,10 @@ import (
 	"net/url"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -601,3 +605,218 @@ func TestClientIPTrustsForwardedOnlyFromLoopback(t *testing.T) {
 }
 
 func newGet(path string) *http.Request { return httptest.NewRequest("GET", path, nil) }
+
+// addURL creates a monitor with an explicit URL (the add helper derives a .example host).
+func (e *env) addURL(t *testing.T, name, rawURL string) int64 {
+	t.Helper()
+	m := &database.Monitor{Name: name, Slug: strings.ToLower(name), URL: rawURL, Method: "GET", ExpectedStat: "200",
+		TimeoutMS: 5000, RetryDelayS: 30, Enabled: true}
+	if err := e.db.CreateMonitor(context.Background(), m); err != nil {
+		t.Fatal(err)
+	}
+	return m.ID
+}
+
+func TestFaviconRequiresLoginAndKnownMonitor(t *testing.T) {
+	e := newEnv(t)
+	id := e.add(t, "Site", true)
+	rec := e.do(httptest.NewRequest("GET", "/admin/monitors/"+strconv.FormatInt(id, 10)+"/favicon", nil))
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/login" {
+		t.Fatalf("anonymous favicon request: %d -> %q", rec.Code, rec.Header().Get("Location"))
+	}
+	c := e.login(t)
+	if rec := c.get("/admin/monitors/999/favicon"); rec.Code != http.StatusNotFound {
+		t.Fatalf("unknown monitor: %d", rec.Code)
+	}
+}
+
+func TestFaviconServesCachedIconWithLockedDownHeaders(t *testing.T) {
+	e := newEnv(t)
+	id := e.addURL(t, "Cached", "https://cached.example")
+	png := []byte("\x89PNG\r\n\x1a\nfake-but-served-as-stored")
+	if err := e.db.SaveIcon(context.Background(), id, database.Icon{ForURL: "https://cached.example", ContentType: "image/png", Data: png, FetchedAt: time.Now().UnixMilli()}); err != nil {
+		t.Fatal(err)
+	}
+	rec := e.login(t).get("/admin/monitors/" + strconv.FormatInt(id, 10) + "/favicon")
+	if rec.Code != 200 || rec.Header().Get("Content-Type") != "image/png" || !bytes.Equal(rec.Body.Bytes(), png) {
+		t.Fatalf("cached icon: %d %q", rec.Code, rec.Header().Get("Content-Type"))
+	}
+	if rec.Header().Get("X-Content-Type-Options") != "nosniff" || !strings.Contains(rec.Header().Get("Content-Security-Policy"), "sandbox") {
+		t.Errorf("icon must be served inert: %v", rec.Header())
+	}
+}
+
+// A monitor pointing at a private address must never be fetched: it gets the neutral fallback, and the
+// miss is cached so the page does not retry on every view.
+func TestFaviconFallbackForBlockedHostAndNegativeCache(t *testing.T) {
+	e := newEnv(t)
+	id := e.addURL(t, "Internal", "http://10.0.0.1/")
+	rec := e.login(t).get("/admin/monitors/" + strconv.FormatInt(id, 10) + "/favicon")
+	if rec.Code != 200 || rec.Header().Get("Content-Type") != "image/svg+xml" || !strings.Contains(rec.Body.String(), "<svg") {
+		t.Fatalf("fallback: %d %q", rec.Code, rec.Header().Get("Content-Type"))
+	}
+	ic, err := e.db.GetIcon(context.Background(), id)
+	if err != nil || len(ic.Data) != 0 || ic.ForURL != "http://10.0.0.1/" {
+		t.Fatalf("miss not cached: %+v %v", ic, err)
+	}
+}
+
+// An icon cached for a previous URL must not be shown after the monitor's URL changes.
+func TestFaviconCacheInvalidatedWhenURLChanges(t *testing.T) {
+	e := newEnv(t)
+	id := e.addURL(t, "Moved", "http://10.0.0.2/")
+	_ = e.db.SaveIcon(context.Background(), id, database.Icon{ForURL: "https://old.example", ContentType: "image/png", Data: []byte("\x89PNGold"), FetchedAt: time.Now().UnixMilli()})
+	rec := e.login(t).get("/admin/monitors/" + strconv.FormatInt(id, 10) + "/favicon")
+	if rec.Header().Get("Content-Type") != "image/svg+xml" || bytes.Contains(rec.Body.Bytes(), []byte("PNGold")) {
+		t.Fatalf("stale icon for a different URL was served: %q", rec.Header().Get("Content-Type"))
+	}
+}
+
+func TestDeletingMonitorRemovesCachedIcon(t *testing.T) {
+	e := newEnv(t)
+	id := e.addURL(t, "Gone", "https://gone.example")
+	_ = e.db.SaveIcon(context.Background(), id, database.Icon{ForURL: "https://gone.example", ContentType: "image/png", Data: []byte("\x89PNGx"), FetchedAt: 1})
+	if _, err := e.db.ExecContext(context.Background(), `DELETE FROM monitors WHERE id = ?`, id); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.db.GetIcon(context.Background(), id); !errors.Is(err, database.ErrNotFound) {
+		t.Fatalf("icon outlived its monitor: %v", err)
+	}
+}
+
+func (e *env) seedIcon(t *testing.T, id int64, data string) {
+	t.Helper()
+	m, err := e.db.GetMonitor(context.Background(), id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := e.db.SaveIcon(context.Background(), id, database.Icon{ForURL: m.URL, ContentType: "image/png", Data: []byte(data), FetchedAt: time.Now().UnixMilli()}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// The public icon endpoint answers only for what the public page itself lists. Private, disabled and
+// unknown monitors are indistinguishable 404s, so the endpoint cannot be used to probe for them.
+func TestPublicIconOnlyForListedMonitors(t *testing.T) {
+	e := newEnv(t)
+	pub := e.add(t, "Public One", true)
+	priv := e.add(t, "Private One", false)
+	off := e.add(t, "Off One", true)
+	if _, err := e.db.ExecContext(context.Background(), `UPDATE monitors SET enabled = 0 WHERE id = ?`, off); err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []int64{pub, priv, off} {
+		e.seedIcon(t, id, "\x89PNGicon")
+	}
+	path := func(id int64) string { return "/icon/" + strconv.FormatInt(id, 10) }
+
+	rec := e.do(httptest.NewRequest("GET", path(pub), nil)) // no login needed
+	if rec.Code != 200 || rec.Header().Get("Content-Type") != "image/png" || !strings.HasPrefix(rec.Header().Get("Cache-Control"), "public") {
+		t.Fatalf("public monitor icon: %d %q %q", rec.Code, rec.Header().Get("Content-Type"), rec.Header().Get("Cache-Control"))
+	}
+	if rec.Header().Get("X-Content-Type-Options") != "nosniff" || !strings.Contains(rec.Header().Get("Content-Security-Policy"), "sandbox") {
+		t.Errorf("icon must be served inert: %v", rec.Header())
+	}
+	notFound := e.do(httptest.NewRequest("GET", "/icon/987654", nil)).Body.String()
+	for name, p := range map[string]string{"private": path(priv), "disabled": path(off), "unknown": "/icon/987654", "non-numeric": "/icon/abc"} {
+		r := e.do(httptest.NewRequest("GET", p, nil))
+		if r.Code != http.StatusNotFound {
+			t.Errorf("%s monitor: got %d, want 404", name, r.Code)
+		}
+		if name != "non-numeric" && r.Body.String() != notFound {
+			t.Errorf("%s 404 differs from the unknown-id 404", name)
+		}
+	}
+}
+
+// The status page links icons only for the monitors it lists, and still never reveals monitor URLs.
+func TestPublicPageUsesIconsWithoutLeakingURLs(t *testing.T) {
+	e := newEnv(t)
+	pub := e.add(t, "Public One", true)
+	priv := e.add(t, "Private One", false)
+	code, body := e.get("/")
+	if code != 200 {
+		t.Fatalf("status page: %d", code)
+	}
+	if !strings.Contains(body, `src="/icon/`+strconv.FormatInt(pub, 10)+`"`) {
+		t.Error("public monitor has no icon on the status page")
+	}
+	if strings.Contains(body, "/icon/"+strconv.FormatInt(priv, 10)) || strings.Contains(body, "Private One") {
+		t.Error("private monitor leaked onto the status page")
+	}
+	if strings.Contains(body, "publicone.example") {
+		t.Error("monitor URL leaked onto the status page")
+	}
+}
+
+// Anyone can hit the public endpoint, so a burst of requests must cost one outbound fetch, not one each.
+func TestPublicIconBurstCausesSingleFetch(t *testing.T) {
+	var iconHits atomic.Int32
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`<link rel="icon" href="/i.png">`))
+	})
+	mux.HandleFunc("/i.png", func(w http.ResponseWriter, r *http.Request) {
+		iconHits.Add(1)
+		time.Sleep(150 * time.Millisecond) // keep the first fetch in flight while the others arrive
+		_, _ = w.Write([]byte("\x89PNG\r\n\x1a\nburst"))
+	})
+	site := httptest.NewServer(mux)
+	defer site.Close()
+
+	e := newEnv(t)
+	e.srv.icons = monitor.NewChecker(monitor.AllowAll) // the site is on loopback
+	m := &database.Monitor{Name: "Burst", Slug: "burst", URL: site.URL, Method: "GET", ExpectedStat: "200", TimeoutMS: 5000, RetryDelayS: 30, Enabled: true, IsPublic: true}
+	if err := e.db.CreateMonitor(context.Background(), m); err != nil {
+		t.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	codes := make([]int, 15)
+	for i := range codes {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			codes[i] = e.do(httptest.NewRequest("GET", "/icon/"+strconv.FormatInt(m.ID, 10), nil)).Code
+		}(i)
+	}
+	wg.Wait()
+	for i, c := range codes {
+		if c != 200 {
+			t.Errorf("request %d: %d", i, c)
+		}
+	}
+	if n := iconHits.Load(); n != 1 {
+		t.Fatalf("%d concurrent requests caused %d icon fetches, want 1", len(codes), n)
+	}
+}
+
+// The banner's colour family follows the real state: green only when the worker is alive and nothing is down.
+func TestPublicBannerTone(t *testing.T) {
+	e := newEnv(t)
+	id := e.add(t, "Site", true)
+	now := time.Now()
+
+	_, body := e.get("/") // no heartbeat yet: monitoring is paused, never green
+	if !strings.Contains(body, "banner banner-warn") || strings.Contains(body, "banner-ok\"") {
+		t.Error("stale worker must show the warn banner")
+	}
+
+	e.heartbeat(t, now)
+	e.apply(t, id, true, now)
+	_, body = e.get("/")
+	if !strings.Contains(body, "banner banner-ok") || !strings.Contains(body, "aware of any issues") {
+		t.Error("healthy state must show the ok banner with its sentence")
+	}
+	if !strings.Contains(body, "#i-status-ok") {
+		t.Error("ok banner is missing its status mark")
+	}
+
+	e.apply(t, id, false, now.Add(time.Minute)) // retries=0: incident opens
+	_, body = e.get("/")
+	if !strings.Contains(body, "banner banner-bad") || strings.Contains(body, "banner banner-ok") {
+		t.Error("outage must show the bad banner")
+	}
+	if !strings.Contains(body, "System status") {
+		t.Error("system status card missing")
+	}
+}

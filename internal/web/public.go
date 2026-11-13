@@ -12,6 +12,7 @@ import (
 )
 
 type publicService struct {
+	ID                                                                    int64
 	Name, StateLabel, StateClass, StateIcon, Uptime30, Uptime90, Response string
 	Strip                                                                 template.HTML
 }
@@ -53,7 +54,7 @@ func (s *Server) public(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		total++
-		ps := publicService{Name: m.Name, Uptime30: "—", Uptime90: "—"}
+		ps := publicService{ID: m.ID, Name: m.Name, Uptime30: "—", Uptime90: "—"}
 		switch m.State {
 		case "up":
 			ps.StateLabel, ps.StateClass = "Operational", "text-pub-ok"
@@ -106,6 +107,20 @@ func (s *Server) public(w http.ResponseWriter, r *http.Request) {
 	title, _ := s.db.GetSetting(ctx, "site_title", "Status")
 	data := map[string]any{"SiteTitle": title, "Services": services, "Active": active, "Resolved": resolved}
 	data["Overall"], data["Detail"], data["OverallDot"] = overall(alive, total, down)
+	tone := overallTone(alive, total, down)
+	data["Tone"] = tone
+	if data["Detail"] == "" {
+		data["Detail"] = map[string]string{
+			"ok":   "We're not aware of any issues affecting our systems.",
+			"bad":  "We're investigating an issue affecting one or more systems.",
+			"none": "No services are being monitored yet.",
+		}[tone]
+	}
+	first, last := now.AddDate(0, 0, -89), now
+	data["RangeLabel"] = first.Format("Jan 2006") + " – " + last.Format("Jan 2006")
+	if first.Format("Jan 2006") == last.Format("Jan 2006") {
+		data["RangeLabel"] = last.Format("Jan 2006")
+	}
 	if lastChecked > 0 {
 		data["LastChecked"] = time.UnixMilli(lastChecked).UTC().Format(longStamp + " UTC")
 	}
@@ -114,6 +129,19 @@ func (s *Server) public(w http.ResponseWriter, r *http.Request) {
 	if err := s.pages["public"].ExecuteTemplate(w, "public", data); err != nil {
 		s.log.Error("render public", "err", err)
 	}
+}
+
+// overallTone is the banner's colour family: ok, warn (monitoring paused), bad (something is down) or none.
+func overallTone(workerAlive bool, total, down int) string {
+	switch {
+	case !workerAlive:
+		return "warn"
+	case total == 0:
+		return "none"
+	case down == 0:
+		return "ok"
+	}
+	return "bad"
 }
 
 // overall summarises health in one sentence. A stale worker heartbeat overrides green:

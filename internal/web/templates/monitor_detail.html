@@ -1,6 +1,6 @@
 {{define "content"}}
 <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-  <div class="text-sm text-mute"><span class="num">{{.Monitor.URL}}</span> · {{.Monitor.Method}} · expects {{.Monitor.ExpectedStat}}</div>
+  <div class="flex items-center gap-3 text-sm text-mute"><img class="fav" src="/admin/monitors/{{.Monitor.ID}}/favicon" alt="" width="28" height="28" loading="lazy"><span><span class="num">{{.Monitor.URL}}</span> · {{.Monitor.Method}} · expects {{.Monitor.ExpectedStat}}</span></div>
   <div class="space-x-2">
     <a class="btn-quiet" href="/admin/monitors/{{.Monitor.ID}}/edit" hx-get="/admin/monitors/{{.Monitor.ID}}/edit" hx-target="#modal-root" hx-swap="innerHTML" data-modal-open><svg class="ic"><use href="#i-edit"/></svg>Edit</a>
   </div>

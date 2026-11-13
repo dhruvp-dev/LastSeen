@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/dhruvp/lastseen/internal/auth"
@@ -29,13 +30,15 @@ var tplFS embed.FS
 var staticFS embed.FS
 
 type Server struct {
-	cfg      *config.Config
-	db       *database.DB
-	log      *slog.Logger
-	sender   notifications.Sender
-	sessions *auth.Store
-	limiter  *auth.RateLimiter
-	pages    map[string]*template.Template
+	cfg       *config.Config
+	db        *database.DB
+	log       *slog.Logger
+	sender    notifications.Sender
+	sessions  *auth.Store
+	limiter   *auth.RateLimiter
+	pages     map[string]*template.Template
+	icons     *monitor.Checker // fetches site icons; same SSRF guard as the checks
+	iconLocks sync.Map         // monitor ID -> *sync.Mutex, one icon fetch at a time per monitor
 }
 
 // layoutPages render inside layout.html; standalone pages define their own document.
@@ -43,8 +46,12 @@ var layoutPages = []string{"overview", "monitors", "monitor_form", "monitor_deta
 var standalonePages = []string{"public", "login"}
 
 func New(cfg *config.Config, db *database.DB, log *slog.Logger, sender notifications.Sender) (*Server, error) {
+	guard := monitor.Guard(monitor.DefaultGuard)
+	if cfg.AllowPrivate {
+		guard = monitor.AllowAll
+	}
 	s := &Server{cfg: cfg, db: db, log: log, sender: sender, sessions: &auth.Store{DB: db},
-		limiter: auth.NewRateLimiter(5, 15*time.Minute), pages: map[string]*template.Template{}}
+		limiter: auth.NewRateLimiter(5, 15*time.Minute), pages: map[string]*template.Template{}, icons: monitor.NewChecker(guard)}
 	for _, p := range layoutPages {
 		t, err := template.New(p).Funcs(funcs).ParseFS(tplFS, "templates/layout.html", "templates/"+p+".html", "templates/icons.html")
 		if err != nil {
@@ -67,6 +74,7 @@ func (s *Server) Handler() http.Handler {
 	static, _ := fs.Sub(staticFS, "static")
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.FS(static))))
 	mux.HandleFunc("GET /healthz", s.healthz)
+	mux.HandleFunc("GET /icon/{id}", s.publicFavicon)
 	mux.HandleFunc("GET /{$}", s.public)
 	mux.HandleFunc("GET /login", s.loginPage)
 	mux.HandleFunc("POST /login", s.loginSubmit)
@@ -81,6 +89,7 @@ func (s *Server) Handler() http.Handler {
 	adm("GET /admin/monitors/{id}", s.monitorDetail)
 	adm("GET /admin/monitors/{id}/checks", s.monitorChecks)
 	adm("GET /admin/monitors/{id}/chart", s.monitorChart)
+	adm("GET /admin/monitors/{id}/favicon", s.monitorFavicon)
 	adm("GET /admin/monitors/{id}/edit", s.editMonitor)
 	adm("POST /admin/monitors/{id}", s.updateMonitor)
 	adm("POST /admin/monitors/{id}/toggle", s.toggleMonitor)

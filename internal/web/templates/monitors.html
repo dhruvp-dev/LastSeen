@@ -20,7 +20,7 @@
 
 {{define "row"}}
 <tr id="m-{{.ID}}">
-  <td class="td"><a class="hover:underline font-medium" href="/admin/monitors/{{.ID}}">{{.Name}}</a><div class="text-xs text-mute truncate max-w-[18rem] num">{{.URL}}</div></td>
+  <td class="td"><div class="flex items-center gap-3"><img class="fav" src="/admin/monitors/{{.ID}}/favicon" alt="" width="28" height="28" loading="lazy"><div class="min-w-0"><a class="hover:underline font-medium" href="/admin/monitors/{{.ID}}">{{.Name}}</a><div class="text-xs text-mute truncate max-w-[18rem] num">{{.URL}}</div></div></div></td>
   <td class="td">{{if not .Enabled}}<span class="st st-paused">Paused</span>{{else if eq .State "up"}}<span class="st st-up">Up</span>{{else if eq .State "down"}}<span class="st st-down">Down</span>{{else}}<span class="st st-pending">Pending</span>{{end}}</td>
   <td class="td hidden md:table-cell text-mute num">{{.MaxRetries}} × {{.RetryDelayS}}s</td>
   <td class="td text-right whitespace-nowrap space-x-2">

@@ -309,15 +309,42 @@
   @media (hover: hover) and (pointer: fine) { .nav-link:hover { background: #f6f6f2; } .nav-link[aria-current="page"]:hover { background: #f1f1ec; } }
 }
 
-@layer components {
-  .st-icon { gap: .375rem; padding: .1875rem .75rem .1875rem .5rem; font-size: .8125rem; }
-  .st-icon::before { display: none; }
-  .st-icon .ic { width: .9375rem; height: .9375rem; }
-}
-
 /* Grey sidebar: active item is a white pill, hover is a translucent white. */
 @layer components {
   .sidebar { background: #f7f7f7; }
   .nav-link[aria-current="page"] { background: #fff; border-color: rgba(0,0,0,.06); box-shadow: 0 1px 2px rgba(0,0,0,.05); }
   @media (hover: hover) and (pointer: fine) { .nav-link:hover { background: rgba(255,255,255,.7); } .nav-link[aria-current="page"]:hover { background: #fff; } }
+}
+
+/* Site icons fetched from the monitored sites (served from our own origin, see favicon.go). */
+@layer components {
+  .fav { flex-shrink: 0; width: 1.75rem; height: 1.75rem; padding: 3px; border-radius: 8px; border: 1px solid rgba(0,0,0,.08); background: #fff; object-fit: contain; }
+  .fav-sm { width: 1.125rem; height: 1.125rem; padding: 1px; border: 0; border-radius: 5px; }
+}
+
+@layer components {
+  .fav-pub { width: 1.25rem; height: 1.25rem; padding: 1px; border: 0; border-radius: 5px; }
+}
+
+/* Public status page: status banner (tinted header bar + sentence) and bordered cards. */
+@layer components {
+  .banner { overflow: hidden; border: 1px solid var(--bn-border); border-radius: .75rem; background: var(--card-bg); }
+  .banner-head { display: flex; align-items: center; gap: .75rem; padding: 1rem 1.25rem; background: var(--bn-head); color: var(--bn-text); }
+  .banner-head h1 { font-size: 1.0625rem; font-weight: 500; letter-spacing: -.01em; line-height: 1.3; }
+  .banner-ico { width: 1.375rem; height: 1.375rem; color: var(--bn-icon); stroke: var(--bn-head); }
+  .banner-body { padding: 1rem 1.25rem; font-size: .9375rem; color: var(--text-color); }
+  .banner-ok   { --bn-head: #e3f4dc; --bn-text: #1f5d10; --bn-border: #3d9e22; --bn-icon: #3d9e22; }
+  .banner-warn { --bn-head: #fbefd9; --bn-text: #7a4a06; --bn-border: #d97706; --bn-icon: #d97706; }
+  .banner-bad  { --bn-head: #fdeceb; --bn-text: #8f1d16; --bn-border: #dc2626; --bn-icon: #dc2626; }
+  .banner-none { --bn-head: #eeeee9; --bn-text: #404040; --bn-border: rgba(0,0,0,.15); --bn-icon: #a3a3a3; }
+  :root.dark .banner-ok   { --bn-head: #0f4d3b; --bn-text: #f4f4f1; --bn-border: #22a37b; --bn-icon: #3ccf9a; }
+  :root.dark .banner-warn { --bn-head: #4d3408; --bn-text: #f4f4f1; --bn-border: #b7791f; --bn-icon: #f0b04a; }
+  :root.dark .banner-bad  { --bn-head: #561b18; --bn-text: #f4f4f1; --bn-border: #c7433b; --bn-icon: #f0645a; }
+  :root.dark .banner-none { --bn-head: #262625; --bn-text: #e6e5e1; --bn-border: rgba(250,250,247,.14); --bn-icon: #9a9993; }
+  .pcard { overflow: hidden; border: 1px solid var(--border-color); border-radius: .75rem; background: var(--card-bg); }
+  .pcard-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem; }
+  .pcard-head h2 { font-size: 1rem; font-weight: 500; letter-spacing: -.01em; color: var(--text-highlight); }
+  .pcard-meta { font-size: .8125rem; color: var(--text-muted); }
+  .pcard-list > li { border-top: 1px solid var(--border-color); padding: 1rem 1.25rem; }
+  .pcard-empty { border-top: 1px solid var(--border-color); padding: 1rem 1.25rem; font-size: .875rem; color: var(--text-muted); }
 }

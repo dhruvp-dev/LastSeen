@@ -1,7 +1,7 @@
 module.exports = {
   future: { hoverOnlyWhenSupported: true }, // no sticky hover on touch devices
   content: ["./internal/web/templates/**/*.html", "./internal/web/*.go"],
-  safelist: ["hero-ok", "hero-warn", "hero-bad", "hero-none"], // class names built at render time (hero-{{.Hero.Tone}})
+  safelist: ["hero-ok", "hero-warn", "hero-bad", "hero-none", "banner-ok", "banner-warn", "banner-bad", "banner-none"], // class names built at render time (hero-{{.Hero.Tone}})
   theme: {
     extend: {
       colors: {
