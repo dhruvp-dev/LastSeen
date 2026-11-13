@@ -1,0 +1,33 @@
+{{define "content"}}
+<div class="flex items-center justify-between mb-6">
+  <p class="text-sm text-mute">Add, pause or remove the sites Last Seen checks.</p>
+  <a class="btn" href="/admin/monitors/new" hx-get="/admin/monitors/new" hx-target="#modal-root" hx-swap="innerHTML" data-modal-open><svg class="ic"><use href="#i-plus"/></svg>Add monitor</a>
+</div>
+<div class="panel overflow-x-auto">
+{{if .Monitors}}
+<table class="w-full">
+  <thead class="bg-surface/60"><tr>
+    <th class="th">Name</th><th class="th">State</th><th class="th hidden sm:table-cell">URL</th><th class="th hidden md:table-cell">Retries</th><th class="th"></th></tr></thead>
+  <tbody class="divide-y divide-rule">
+  {{range .Monitors}}{{template "row" .}}{{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="px-5 py-8 text-sm text-mute">Nothing is being monitored yet.</p>
+{{end}}
+</div>
+{{end}}
+
+{{define "row"}}
+<tr id="m-{{.ID}}">
+  <td class="td"><a class="hover:underline font-medium" href="/admin/monitors/{{.ID}}">{{.Name}}</a></td>
+  <td class="td">{{if not .Enabled}}<span class="st st-paused">Paused</span>{{else if eq .State "up"}}<span class="st st-up">Up</span>{{else if eq .State "down"}}<span class="st st-down">Down</span>{{else}}<span class="st st-pending">Pending</span>{{end}}</td>
+  <td class="td hidden sm:table-cell text-mute truncate max-w-[16rem]">{{.URL}}</td>
+  <td class="td hidden md:table-cell text-mute num">{{.MaxRetries}} × {{.RetryDelayS}}s</td>
+  <td class="td text-right whitespace-nowrap space-x-2">
+    <a class="btn-quiet" href="/admin/monitors/{{.ID}}/edit" hx-get="/admin/monitors/{{.ID}}/edit" hx-target="#modal-root" hx-swap="innerHTML" data-modal-open><svg class="ic"><use href="#i-edit"/></svg>Edit</a>
+    <button class="btn-quiet" hx-post="/admin/monitors/{{.ID}}/toggle" hx-target="#m-{{.ID}}" hx-swap="outerHTML">{{if .Enabled}}<svg class="ic"><use href="#i-pause"/></svg>Pause{{else}}<svg class="ic"><use href="#i-play"/></svg>Start{{end}}</button>
+    <button class="btn-quiet" hx-delete="/admin/monitors/{{.ID}}" hx-confirm="Delete {{.Name}} and all its history?" hx-target="#m-{{.ID}}" hx-swap="outerHTML"><svg class="ic"><use href="#i-trash"/></svg>Delete</button>
+  </td>
+</tr>
+{{end}}

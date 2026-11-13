@@ -1,0 +1,37 @@
+[Unit]
+Description=Last Seen web server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lastseen
+Group=lastseen
+EnvironmentFile=/etc/lastseen/lastseen.env
+Environment=LASTSEEN_DB=/var/lib/lastseen/lastseen.db
+ExecStart=/opt/lastseen/lastseen serve
+WorkingDirectory=/var/lib/lastseen
+StateDirectory=lastseen
+StateDirectoryMode=0750
+Restart=always
+RestartSec=5
+MemoryMax=200M
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

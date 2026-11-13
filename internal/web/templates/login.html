@@ -1,0 +1,33 @@
+{{define "login"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Sign in · Last Seen</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="bg-canvas">
+{{template "icons"}}
+<main class="min-h-screen flex items-center justify-center px-5 py-10">
+  <form method="post" action="/login" class="w-full max-w-sm rounded-2xl border border-rule bg-paper p-8 shadow-card">
+    <p class="flex items-center gap-2.5 text-sm font-medium text-ink"><svg class="ic h-7 w-7"><use href="#i-logo"/></svg>Last Seen</p>
+    <h1 class="mt-6 text-2xl font-normal tracking-[-0.025em]">Welcome back</h1>
+    <p class="mt-1 text-sm text-mute">Sign in to pick up where you left off.</p>
+    <div class="mt-6 space-y-5">
+      <div>
+        <label class="label" for="name">Your name <span class="text-bad" aria-hidden="true">*</span></label>
+        <input class="field" id="name" name="name" type="text" autocomplete="nickname" maxlength="40" placeholder="What should we call you?" autofocus required>
+      </div>
+      <div>
+        <label class="label" for="password">Password <span class="text-bad" aria-hidden="true">*</span></label>
+        <input class="field" id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+        {{with .Error}}<p class="err" role="alert">{{.}}</p>{{end}}
+      </div>
+      <button class="btn w-full justify-center" type="submit">Sign in</button>
+    </div>
+  </form>
+</main>
+</body>
+</html>{{end}}

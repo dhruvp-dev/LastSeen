@@ -1,0 +1,29 @@
+[Unit]
+Description=Last Seen database backup
+
+[Service]
+Type=oneshot
+User=lastseen
+Group=lastseen
+EnvironmentFile=/etc/lastseen/lastseen.env
+Environment=LASTSEEN_DB=/var/lib/lastseen/lastseen.db
+ExecStart=/opt/lastseen/lastseen backup
+WorkingDirectory=/var/lib/lastseen
+StateDirectory=lastseen
+StateDirectoryMode=0750
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+UMask=0077

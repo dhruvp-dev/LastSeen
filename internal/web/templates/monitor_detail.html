@@ -1,0 +1,71 @@
+{{define "content"}}
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <div class="text-sm text-mute"><span class="num">{{.Monitor.URL}}</span> · {{.Monitor.Method}} · expects {{.Monitor.ExpectedStat}}</div>
+  <div class="space-x-2">
+    <a class="btn-quiet" href="/admin/monitors/{{.Monitor.ID}}/edit" hx-get="/admin/monitors/{{.Monitor.ID}}/edit" hx-target="#modal-root" hx-swap="innerHTML" data-modal-open><svg class="ic"><use href="#i-edit"/></svg>Edit</a>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+  {{range .Tiles}}
+  <div class="kpi">
+    <div class="p-4 pb-3"><div class="text-sm text-mute">{{.Title}}</div><div class="mt-2 text-3xl font-normal tracking-[-0.025em] num">{{.Value}}</div></div>
+    <div class="border-t border-rule bg-surface px-4 py-2.5 text-xs text-mute num">{{.FootL}}</div>
+  </div>
+  {{end}}
+</div>
+
+{{template "monitor_chart" .MChart}}
+
+<section class="panel mb-8">
+  <h2 class="text-lg font-medium tracking-[-0.017em] px-5 py-4">Incidents</h2>
+  <div class="border-t border-rule overflow-x-auto">
+  {{if .Incidents}}
+  <table class="w-full"><thead class="bg-surface/60"><tr><th class="th">Started (UTC)</th><th class="th">Status</th><th class="th">Duration</th><th class="th">Cause</th></tr></thead>
+    <tbody class="divide-y divide-rule">
+    {{range .Incidents}}<tr>
+      <td class="td num whitespace-nowrap">{{ts .StartedAt}}</td>
+      <td class="td">{{if .ResolvedAt.Valid}}<span class="text-ok">Resolved</span>{{else}}<span class="text-bad">Open</span>{{end}}</td>
+      <td class="td num">{{dur .StartedAt .ResolvedAt}}</td>
+      <td class="td text-mute">{{str .Cause}}</td></tr>{{end}}
+    </tbody></table>
+  {{else}}<p class="px-5 py-6 text-sm text-mute">No incidents recorded.</p>{{end}}
+  </div>
+</section>
+
+<section class="panel">
+  <h2 class="text-lg font-medium tracking-[-0.017em] px-5 py-4">Check history</h2>
+  <div class="border-t border-rule overflow-x-auto">
+  {{if .Checks}}
+  <table class="w-full"><thead class="bg-surface/60"><tr>
+    <th class="th">Time (UTC)</th><th class="th">Result</th><th class="th">Status</th><th class="th">Response</th><th class="th hidden sm:table-cell">Attempt</th><th class="th hidden md:table-cell">Detail</th></tr></thead>
+    <tbody class="divide-y divide-rule">{{template "check_rows" .}}</tbody>
+  </table>
+  {{else}}<p class="px-5 py-6 text-sm text-mute">No checks recorded yet.</p>{{end}}
+  </div>
+</section>
+{{end}}
+
+{{define "check_rows"}}
+{{range .Checks}}<tr>
+  <td class="td num whitespace-nowrap">{{ts .CheckedAt}}</td>
+  <td class="td">{{if .OK}}<span class="text-ok">OK</span>{{else}}<span class="text-bad">Failed</span>{{end}}</td>
+  <td class="td num">{{num .StatusCode}}</td>
+  <td class="td num text-mute">{{if .ResponseMS.Valid}}{{.ResponseMS.Int64}} ms{{else}}—{{end}}</td>
+  <td class="td num text-mute hidden sm:table-cell">{{.Attempts}}</td>
+  <td class="td text-mute hidden md:table-cell">{{str .Error}}</td></tr>{{end}}
+{{if .NextBefore}}<tr><td colspan="6" class="td text-center">
+  <button class="btn-quiet" hx-get="/admin/monitors/{{.Monitor.ID}}/checks?before={{.NextBefore}}" hx-target="closest tr" hx-swap="outerHTML">Load older checks</button></td></tr>{{end}}
+{{end}}
+
+{{define "monitor_chart"}}
+<section class="panel p-5 mb-8" id="mchart">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-lg font-medium tracking-[-0.017em]">Response time <span class="text-sm font-normal text-mute">(avg, ms)</span></h2>
+    <div class="seg" role="group" aria-label="Time range">
+      {{$cur := .Range}}{{$id := .Monitor.ID}}{{range .Ranges}}<button type="button" class="seg-btn" aria-pressed="{{eq .Key $cur}}" title="{{.Label}}" hx-get="/admin/monitors/{{$id}}/chart?range={{.Key}}" hx-target="#mchart" hx-swap="outerHTML">{{.Key}}</button>{{end}}
+    </div>
+  </div>
+  <div class="overflow-x-auto">{{.SVG}}</div>
+</section>
+{{end}}

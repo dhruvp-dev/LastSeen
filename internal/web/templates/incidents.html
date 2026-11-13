@@ -1,0 +1,28 @@
+{{define "content"}}
+<p class="text-sm text-mute mb-6">Incidents open and resolve automatically. The public note appears on the status page.</p>
+{{if .Incidents}}
+<div class="space-y-4">
+{{range .Incidents}}
+  <div class="panel p-5">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <div><a class="font-medium hover:underline" href="/admin/monitors/{{.MonitorID}}">{{.MonitorName}}</a>
+        {{if .Open}}<span class="badge bg-red-50 text-bad border border-red-200 ml-2">Open</span>{{else}}<span class="badge bg-green-50 text-ok border border-green-200 ml-2">Resolved</span>{{end}}</div>
+      <span class="text-sm text-mute num">{{ts .StartedAt}} UTC · {{dur .StartedAt .ResolvedAt}}</span>
+    </div>
+    <p class="text-sm text-mute mt-2">Cause: {{if .Cause.Valid}}{{.Cause.String}}{{else}}—{{end}}</p>
+    <form method="post" action="/admin/incidents/{{.ID}}/note" class="mt-4 flex flex-col sm:flex-row gap-2">
+      <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+      <input class="field" name="note" maxlength="500" value="{{str .Note}}" placeholder="Public note (optional)">
+      <button class="btn-quiet justify-center" type="submit"><svg class="ic"><use href="#i-save"/></svg>Save note</button>
+    </form>
+    {{if .Open}}
+    <form method="post" action="/admin/incidents/{{.ID}}/resolve" class="mt-3" data-confirm="Mark as resolved? No recovery email is sent. If the service is still failing, a new incident will open after the next checks.">
+      <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+      <button class="btn-quiet" type="submit"><svg class="ic"><use href="#i-check"/></svg>Resolve manually</button>
+    </form>
+    {{end}}
+  </div>
+{{end}}
+</div>
+{{else}}<div class="panel px-5 py-8 text-sm text-mute">No incidents yet.</div>{{end}}
+{{end}}

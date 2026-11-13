@@ -1,0 +1,72 @@
+{{define "monitor_fields"}}
+  <div><label class="label" for="name">Name</label>
+    <input class="field" id="name" name="name" value="{{.Form.Name}}" required maxlength="80">
+    {{with .Errors.name}}<p class="err">{{.}}</p>{{end}}</div>
+  <div><label class="label" for="url">URL</label>
+    <input class="field" id="url" name="url" value="{{.Form.URL}}" required placeholder="https://example.com">
+    {{with .Errors.url}}<p class="err">{{.}}</p>{{end}}</div>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div><label class="label" for="method">Method</label>
+      <select class="field" id="method" name="method">
+        <option {{if eq .Form.Method "GET"}}selected{{end}}>GET</option>
+        <option {{if eq .Form.Method "HEAD"}}selected{{end}}>HEAD</option></select></div>
+    <div><label class="label" for="expected_status">Expected status</label>
+      <input class="field num" id="expected_status" name="expected_status" value="{{.Form.ExpectedStat}}">
+      {{with .Errors.expected_status}}<p class="err">{{.}}</p>{{end}}</div>
+    <div><label class="label" for="timeout_s">Timeout (s)</label>
+      <input class="field num" id="timeout_s" name="timeout_s" type="number" min="1" max="60" value="{{.Form.TimeoutS}}">
+      {{with .Errors.timeout_s}}<p class="err">{{.}}</p>{{end}}</div>
+  </div>
+
+  <fieldset class="rounded-lg border border-rule p-4">
+    <legend class="px-2 text-sm font-medium">Retries before alerting</legend>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div><label class="label" for="max_retries">Retries</label>
+        <input class="field num" id="max_retries" name="max_retries" type="number" min="0" max="5" value="{{.Form.MaxRetries}}">
+        <p class="hint">0–5. Use 0 to alert on the first failure.</p>
+        {{with .Errors.max_retries}}<p class="err">{{.}}</p>{{end}}</div>
+      <div><label class="label" for="retry_delay_s">Wait between retries (seconds)</label>
+        <input class="field num" id="retry_delay_s" name="retry_delay_s" type="number" min="10" max="1800" value="{{.Form.RetryDelayS}}">
+        <p class="hint">10–1800 (max 30 minutes).</p>
+        {{with .Errors.retry_delay_s}}<p class="err">{{.}}</p>{{end}}</div>
+    </div>
+    <p class="text-sm text-mute mt-4" id="estimate"></p>
+  </fieldset>
+
+  <div><label class="label" for="slug">Slug</label>
+    <input class="field num" id="slug" name="slug" value="{{.Form.Slug}}" placeholder="auto from name">
+    {{with .Errors.slug}}<p class="err">{{.}}</p>{{end}}</div>
+  <div class="space-y-2 text-sm">
+    <label class="flex items-center gap-2"><input type="checkbox" name="enabled" {{if .Form.Enabled}}checked{{end}}> Enabled</label>
+    <label class="flex items-center gap-2"><input type="checkbox" name="is_public" {{if .Form.IsPublic}}checked{{end}}> Show on public status page</label>
+  </div>
+  <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+{{end}}
+
+{{define "content"}}
+<form method="post" class="space-y-6 max-w-2xl" action="{{if .ID}}/admin/monitors/{{.ID}}{{else}}/admin/monitors{{end}}">
+{{template "monitor_fields" .}}
+  <div class="flex items-center gap-3"><button class="btn" type="submit"><svg class="ic"><use href="#i-save"/></svg>Save</button><a class="btn-quiet" href="/admin/monitors">Cancel</a></div>
+</form>
+{{end}}
+
+{{define "monitor_modal"}}
+<div class="modal-backdrop" data-modal-backdrop>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <form method="post" action="{{if .ID}}/admin/monitors/{{.ID}}{{else}}/admin/monitors{{end}}"
+          hx-post="{{if .ID}}/admin/monitors/{{.ID}}{{else}}/admin/monitors{{end}}" hx-target="#modal-root" hx-swap="innerHTML">
+      <div class="flex items-center justify-between gap-3 border-b border-rule px-6 py-4">
+        <h2 id="modal-title" class="text-base font-medium tracking-[-0.017em]">{{.Title}}</h2>
+        <button type="button" class="icon-btn h-8 w-8" data-modal-close aria-label="Close"><svg class="ic"><use href="#i-close"/></svg></button>
+      </div>
+      <div class="space-y-6 px-6 py-5 max-h-[70vh] overflow-y-auto">
+{{template "monitor_fields" .}}
+      </div>
+      <div class="flex items-center justify-end gap-3 border-t border-rule px-6 py-4">
+        <button type="button" class="btn-quiet" data-modal-close>Cancel</button>
+        <button class="btn" type="submit"><svg class="ic"><use href="#i-save"/></svg>Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+{{end}}

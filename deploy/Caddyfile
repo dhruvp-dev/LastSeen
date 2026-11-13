@@ -1,0 +1,15 @@
+status.dhruvp.tech {
+	encode zstd gzip
+
+	# Caddy obtains and renews the TLS certificate automatically.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	reverse_proxy 127.0.0.1:8080 {
+		# Overwrite (never append to) the client-supplied value: the app trusts the
+		# rightmost entry only when the request comes from this local proxy.
+		header_up X-Forwarded-For {remote_host}
+	}
+}

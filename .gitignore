@@ -1,0 +1,20 @@
+bin/
+data/
+tools/tailwindcss
+*.db*
+
+# Claude files
+CLAUDE.md
+claude.md
+*claude*.md
+.claude/
+
+# Agent files
+AGENTS.md
+agents.md
+AGENT.md
+agent.md
+*agents*.md
+*agent*.md
+.agents/
+
