@@ -5,7 +5,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        paper: "#ffffff", surface: "#f6f6f2", ink: "#0a0a0a", mute: "#737373", faint: "#a3a3a3", rule: "#d9d9d2", soot: "#141414", canvas: "#edede8", side: "#dbdbd2",
+        paper: "#ffffff", surface: "#f6f6f2", ink: "#0a0a0a", mute: "#737373", faint: "#a3a3a3", rule: "#d9d9d2", soot: "#141414", canvas: "#ffffff", side: "#dbdbd2",
         brand: { DEFAULT: "#141414", dark: "#000000", soft: "#dbdbd2", wash: "#dbdbd2" }, warm: { stone: "#dbdbd2", quartz: "#d0d0c8", pebble: "#c0c0c8", lime: "#4cc02b" },
         pub: { bg: "var(--bg-color)", text: "var(--text-color)", mute: "var(--text-muted)", subtle: "var(--text-subtle)", hi: "var(--text-highlight)", card: "var(--card-bg)", rule: "var(--border-color)", ok: "var(--pub-ok)", warn: "var(--pub-warn)", bad: "var(--pub-bad)" },
         ok: "#3d9e22", warn: "#d97706", bad: "#dc2626",

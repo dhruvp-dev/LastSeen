@@ -301,10 +301,23 @@
 
 /* Dashboard system: grey cards with white inset rows (KPI footer, status tiles, ranked rows, incidents). */
 @layer components {
-  .card { border-radius: 1rem; background: #f7f7f7; padding: 1.25rem; }
+  .card { min-width: 0; border-radius: 1rem; background: #f7f7f7; padding: 1.25rem; }
   .inset { background: #fff; border-radius: 10px; }
   .kpi-foot { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-top: 1rem; border-radius: 10px; background: #fff; padding: .5rem .75rem; font-size: .75rem; color: #737373; }
   .hero-dot.hero-none::after { display: none; }
   .nav-link[aria-current="page"] { background: #f1f1ec; border-color: transparent; box-shadow: none; }
   @media (hover: hover) and (pointer: fine) { .nav-link:hover { background: #f6f6f2; } .nav-link[aria-current="page"]:hover { background: #f1f1ec; } }
+}
+
+@layer components {
+  .st-icon { gap: .375rem; padding: .1875rem .75rem .1875rem .5rem; font-size: .8125rem; }
+  .st-icon::before { display: none; }
+  .st-icon .ic { width: .9375rem; height: .9375rem; }
+}
+
+/* Grey sidebar: active item is a white pill, hover is a translucent white. */
+@layer components {
+  .sidebar { background: #f7f7f7; }
+  .nav-link[aria-current="page"] { background: #fff; border-color: rgba(0,0,0,.06); box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+  @media (hover: hover) and (pointer: fine) { .nav-link:hover { background: rgba(255,255,255,.7); } .nav-link[aria-current="page"]:hover { background: #fff; } }
 }
