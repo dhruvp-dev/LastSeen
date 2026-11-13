@@ -152,23 +152,55 @@ func stripSVG(days []string, stats []database.DayStat) template.HTML {
 		byDay[d.Day] = d
 	}
 	var b strings.Builder
-	fmt.Fprintf(&b, `<svg viewBox="0 0 %d 30" preserveAspectRatio="none" class="w-full h-8" role="img" aria-label="Uptime for the last %d days">`, len(days)*10, len(days))
+	fmt.Fprintf(&b, `<svg viewBox="0 0 %d 30" preserveAspectRatio="none" class="w-full h-8 strip-svg" role="img" aria-label="Uptime for the last %d days">`, len(days)*10, len(days))
 	for i, day := range days {
-		color, label := "d-none", day+" · no data"
+		color := "d-none"
+		pctText := "No data"
+		status := "none"
+		var detail string
+
+		t, err := time.Parse("2006-01-02", day)
+		dateLabel := day
+		if err == nil {
+			dateLabel = t.Format("2 Jan 2006")
+		}
+		if i == len(days)-1 {
+			dateLabel += " · Today"
+		}
+
 		if d, ok := byDay[day]; ok {
 			if p, ok := d.UptimePct(); ok {
-				label = fmt.Sprintf("%s · %s", day, formatPct(p))
+				pct := formatPct(p)
+				pctText = pct + " uptime"
 				switch {
 				case p >= 99:
 					color = "d-ok"
+					status = "ok"
 				case p >= 90:
 					color = "d-warn"
+					status = "warn"
 				default:
 					color = "d-bad"
+					status = "bad"
+				}
+				if failed := d.Total - d.Up; failed > 0 {
+					detail = fmt.Sprintf("%d failed", failed)
+					if d.AvgMS.Valid && d.AvgMS.Float64 > 0 {
+						detail += fmt.Sprintf(" · %.0f ms", d.AvgMS.Float64)
+					}
+				} else if d.AvgMS.Valid && d.AvgMS.Float64 > 0 {
+					detail = fmt.Sprintf("%.0f ms avg", d.AvgMS.Float64)
 				}
 			}
 		}
-		fmt.Fprintf(&b, `<rect x="%d" y="0" width="8" height="30" rx="1.5" class="%s"><title>%s</title></rect>`, i*10, color, label)
+
+		ariaLabel := fmt.Sprintf("%s · %s", dateLabel, pctText)
+		if detail != "" {
+			ariaLabel += " · " + detail
+		}
+
+		fmt.Fprintf(&b, `<rect x="%d" y="0" width="8" height="30" rx="1.5" class="strip-bar %s" data-date="%s" data-pct="%s" data-status="%s" data-detail="%s" aria-label="%s" tabindex="0"></rect>`,
+			i*10, color, dateLabel, pctText, status, detail, ariaLabel)
 	}
 	b.WriteString(`</svg>`)
 	return template.HTML(b.String())
