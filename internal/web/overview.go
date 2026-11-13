@@ -76,22 +76,22 @@ func (s *Server) overview(w http.ResponseWriter, r *http.Request) {
 			pending++
 		}
 	}
-	hero := map[string]any{"Pill": "st-up", "Icon": "check", "Tone": "ok", "Headline": "All systems operational", "Sub": fmt.Sprintf("%d of %d monitors running", active, len(rows))}
+	hero := map[string]any{"Color": "text-ok", "Pill": "st-up", "Icon": "check", "Tone": "ok", "Headline": "All systems operational", "Sub": fmt.Sprintf("%d of %d monitors running", active, len(rows))}
 	switch {
 	case len(rows) == 0:
-		hero["Pill"], hero["Icon"] = "st-paused", "globe"
+		hero["Color"], hero["Pill"], hero["Icon"] = "text-mute", "st-paused", "globe"
 		hero["Tone"], hero["Headline"], hero["Sub"] = "none", "No monitors yet", "Add your first site to start watching it."
 	case active == 0:
-		hero["Pill"], hero["Icon"] = "st-paused", "pause"
+		hero["Color"], hero["Pill"], hero["Icon"] = "text-mute", "st-paused", "pause"
 		hero["Tone"], hero["Headline"], hero["Sub"] = "none", "Nothing is being checked", fmt.Sprintf("All %d monitors are paused", len(rows))
 	case down == 1:
-		hero["Pill"], hero["Icon"] = "st-down", "incident"
+		hero["Color"], hero["Pill"], hero["Icon"] = "text-bad", "st-down", "incident"
 		hero["Tone"], hero["Headline"], hero["Sub"] = "bad", downNames[0]+" is down", "1 service needs attention"
 	case down > 1:
-		hero["Pill"], hero["Icon"] = "st-down", "incident"
+		hero["Color"], hero["Pill"], hero["Icon"] = "text-bad", "st-down", "incident"
 		hero["Tone"], hero["Headline"], hero["Sub"] = "bad", fmt.Sprintf("%d services are down", down), strings.Join(downNames, ", ")
 	case pending > 0:
-		hero["Pill"], hero["Icon"] = "st-pending", "clock"
+		hero["Color"], hero["Pill"], hero["Icon"] = "text-warn", "st-pending", "clock"
 		hero["Tone"], hero["Headline"], hero["Sub"] = "warn", "Waiting on first checks", fmt.Sprintf("%d monitor(s) pending", pending)
 	}
 

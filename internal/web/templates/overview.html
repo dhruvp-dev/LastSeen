@@ -2,7 +2,13 @@
 <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
   <div class="min-w-0">
     <h2 class="text-2xl font-medium tracking-[-0.025em]">Welcome, {{if .AdminName}}{{.AdminName}}{{else}}there{{end}}</h2>
-    <p class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-mute"><span class="st st-icon {{.Hero.Pill}}"><svg class="ic"><use href="#i-{{.Hero.Icon}}"/></svg>{{.Hero.Headline}}</span><span>{{.Hero.Sub}} · <span class="num">{{.Now}}</span></span></p>
+    <p class="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-mute">
+      <span class="inline-flex items-center gap-1.5 font-medium {{.Hero.Color}}"><svg class="ic"><use href="#i-{{.Hero.Icon}}"/></svg>{{.Hero.Headline}}</span>
+      <span class="text-mute/60" aria-hidden="true">·</span>
+      <span>{{.Hero.Sub}}</span>
+      <span class="text-mute/60" aria-hidden="true">·</span>
+      <span class="num">{{.Now}}</span>
+    </p>
   </div>
   <div class="flex items-center gap-2">
     <a class="btn-quiet" href="/admin/monitors"><svg class="ic"><use href="#i-globe"/></svg>Manage monitors</a>
@@ -49,7 +55,7 @@
       <tbody class="divide-y divide-rule">
       {{range .Services}}
         <tr data-row="{{.Name}} {{.URL}} {{.StatusLabel}}">
-          <td class="td"><a class="font-medium hover:underline" href="/admin/monitors/{{.ID}}">{{.Name}}</a><div class="max-w-[22rem] truncate text-xs text-mute num">{{.URL}}</div></td>
+          <td class="td"><div class="flex items-center gap-3"><img class="fav" src="/admin/monitors/{{.ID}}/favicon" alt="" width="28" height="28" loading="lazy"><div class="min-w-0"><a class="font-medium hover:underline" href="/admin/monitors/{{.ID}}">{{.Name}}</a><div class="max-w-[22rem] truncate text-xs text-mute num">{{.URL}}</div></div></div></td>
           <td class="td whitespace-nowrap"><span class="st {{.StatusClass}}">{{.StatusLabel}}</span></td>
           <td class="td num whitespace-nowrap">{{.UptimeText}}</td>
           <td class="td num text-mute whitespace-nowrap">{{.ResponseText}}</td>
@@ -97,7 +103,7 @@
         {{range .Slowest}}
         <li class="inset relative overflow-hidden">
           <svg class="absolute inset-0 h-full w-full" aria-hidden="true" preserveAspectRatio="none"><rect width="{{.Pct}}%" height="100%" fill="#ececec"/></svg>
-          <a class="relative flex items-center justify-between gap-3 px-3 py-2.5 text-sm hover:underline" href="/admin/monitors/{{.ID}}"><span class="min-w-0 truncate"><span class="mr-2 text-xs text-mute num">{{.Place}}</span>{{.Name}}</span><span class="num">{{.MS}} ms</span></a>
+          <a class="relative flex items-center justify-between gap-3 px-3 py-2.5 text-sm hover:underline" href="/admin/monitors/{{.ID}}"><span class="flex min-w-0 items-center gap-2"><span class="text-xs text-mute num">{{.Place}}</span><img class="fav fav-sm" src="/admin/monitors/{{.ID}}/favicon" alt="" width="18" height="18" loading="lazy"><span class="truncate">{{.Name}}</span></span><span class="num">{{.MS}} ms</span></a>
         </li>
         {{end}}
       </ul>
