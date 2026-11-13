@@ -2,7 +2,7 @@
 <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
   <div class="min-w-0">
     <h2 class="text-2xl font-medium tracking-[-0.025em]">Welcome, {{if .AdminName}}{{.AdminName}}{{else}}there{{end}}</h2>
-    <p class="mt-1 flex items-center gap-2 text-sm text-mute"><span class="hero-dot hero-{{.Hero.Tone}} live-dot pulse h-2 w-2" aria-hidden="true"></span><span>{{.Hero.Headline}} · {{.Hero.Sub}} · <span class="num">{{.Now}}</span></span></p>
+    <p class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-mute"><span class="st st-icon {{.Hero.Pill}}"><svg class="ic"><use href="#i-{{.Hero.Icon}}"/></svg>{{.Hero.Headline}}</span><span>{{.Hero.Sub}} · <span class="num">{{.Now}}</span></span></p>
   </div>
   <div class="flex items-center gap-2">
     <a class="btn-quiet" href="/admin/monitors"><svg class="ic"><use href="#i-globe"/></svg>Manage monitors</a>
@@ -41,7 +41,7 @@
     </div>
     <input type="search" class="field w-full sm:w-60" placeholder="Search services" aria-label="Search services" data-filter="#service-rows">
   </div>
-  <div class="overflow-x-auto border-t border-rule" id="service-rows">
+  <div class="relative overflow-x-auto border-t border-rule" id="service-rows">
     {{if .Services}}
     <table class="w-full">
       <thead class="bg-surface/60"><tr>
@@ -68,7 +68,7 @@
 {{define "charts"}}
 <div id="charts" class="space-y-6">
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-    <section class="card xl:col-span-2">
+    <section class="card xl:col-span-3">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 class="text-sm text-mute">Response time</h3>
@@ -79,24 +79,12 @@
           <div class="seg" role="group" aria-label="Time range">
             {{$cur := .Range}}{{range .Ranges}}<button type="button" class="seg-btn" aria-pressed="{{eq .Key $cur}}" title="{{.Label}}" hx-get="/admin/charts?range={{.Key}}" hx-target="#charts" hx-swap="outerHTML">{{.Key}}</button>{{end}}
           </div>
-          <div class="flex items-center gap-4 text-xs text-mute"><span class="inline-flex items-center gap-1.5"><span class="h-0.5 w-4 rounded bg-ink" aria-hidden="true"></span>This period</span><span class="inline-flex items-center gap-1.5"><span class="w-4 border-t-2 border-dashed border-faint" aria-hidden="true"></span>Previous</span></div>
+          <div class="flex items-center gap-4 text-xs text-mute"><span class="inline-flex items-center gap-1.5"><span class="h-0.5 w-4 rounded bg-ok" aria-hidden="true"></span>This period</span><span class="inline-flex items-center gap-1.5"><span class="w-4 border-t-2 border-dashed border-faint" aria-hidden="true"></span>Previous</span></div>
         </div>
       </div>
       <div class="mt-4 overflow-x-auto">{{.Response}}</div>
     </section>
 
-    <section class="card">
-      <h3 class="text-sm text-mute">Monitors by status</h3>
-      <div class="mt-1 text-3xl font-normal tracking-[-0.025em] num">{{.MonitorTotal}}</div>
-      <p class="mt-1 text-xs text-mute">{{.UpSub}}</p>
-      <div class="mt-4">{{.Donut}}</div>
-      <div class="mt-4 grid grid-cols-4 gap-2">
-        <div class="inset px-2.5 py-2"><div class="flex items-center gap-1.5 text-xs text-mute"><span class="mk mk-up"></span>Up</div><div class="mt-0.5 text-lg num">{{.Counts.Up}}</div></div>
-        <div class="inset px-2.5 py-2"><div class="flex items-center gap-1.5 text-xs text-mute"><span class="mk mk-down"></span>Down</div><div class="mt-0.5 text-lg num">{{.Counts.Down}}</div></div>
-        <div class="inset px-2.5 py-2"><div class="flex items-center gap-1.5 text-xs text-mute"><span class="mk mk-pending"></span>Pending</div><div class="mt-0.5 text-lg num">{{.Counts.Pending}}</div></div>
-        <div class="inset px-2.5 py-2"><div class="flex items-center gap-1.5 text-xs text-mute"><span class="mk mk-paused"></span>Paused</div><div class="mt-0.5 text-lg num">{{.Counts.Paused}}</div></div>
-      </div>
-    </section>
   </div>
 
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">

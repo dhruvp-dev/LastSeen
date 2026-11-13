@@ -130,7 +130,7 @@ var (
 
 const (
 	cLeft, cRight, cTop, cBot = 50, 10, 12, 28
-	colBrand                  = "#292929"
+	colBrand                  = "#3d9e22" // chart line, area and healthy bars (the "up" green)
 	colRule                   = "#e5e5e5"
 	colMute                   = "#737373"
 )
@@ -335,44 +335,6 @@ func uptimeSVG(bs []bucket, size time.Duration, d dims) template.HTML {
 	return f.close()
 }
 
-// donutSVG draws monitors by status as a ring with the share that is up in the middle.
-func donutSVG(up, down, pending, paused int) template.HTML {
-	total := up + down + pending + paused
-	const r = 76.0
-	circ := 2 * math.Pi * r
-	var b strings.Builder
-	b.WriteString(`<svg viewBox="0 0 200 200" class="mx-auto h-44 w-44" role="img" aria-label="Monitors by status">`)
-	fmt.Fprintf(&b, `<circle cx="100" cy="100" r="%.0f" fill="none" stroke="#e5e5e5" stroke-width="18"/>`, r)
-	segs := 0
-	for _, n := range []int{up, down, pending, paused} {
-		if n > 0 {
-			segs++
-		}
-	}
-	off := 0.0
-	for _, s := range []struct {
-		n   int
-		col string
-	}{{up, "#3d9e22"}, {down, "#dc2626"}, {pending, "#d97706"}, {paused, "#a3a39e"}} {
-		if s.n == 0 {
-			continue
-		}
-		l := circ * float64(s.n) / float64(total)
-		gap := 0.0
-		if segs > 1 {
-			gap = 3
-		}
-		fmt.Fprintf(&b, `<circle cx="100" cy="100" r="%.0f" fill="none" stroke="%s" stroke-width="18" stroke-dasharray="%.2f %.2f" stroke-dashoffset="%.2f" transform="rotate(-90 100 100)"/>`, r, s.col, math.Max(l-gap, 0.5), circ, -off)
-		off += l
-	}
-	label, value := "Up", "—"
-	if enabled := total - paused; enabled > 0 {
-		value = fmt.Sprintf("%.0f%%", float64(up)*100/float64(enabled))
-	}
-	fmt.Fprintf(&b, `<text x="100" y="94" text-anchor="middle" font-size="12" fill="%s">%s</text><text x="100" y="122" text-anchor="middle" font-size="28" fill="#0a0a0a">%s</text></svg>`, colMute, label, value)
-	return template.HTML(b.String())
-}
-
 // ---- data + handlers ----
 
 func (s *Server) chartData(ctx context.Context, monitorID int64, rng chartRange) ([]bucket, error) {
@@ -460,19 +422,8 @@ func (s *Server) overviewChartsData(ctx context.Context, key string) (map[string
 		MS         int64
 		Pct, Place int
 	}
-	var up, down, pend, paused int
 	var ranks []rank
 	for _, m := range svc {
-		switch {
-		case !m.Enabled:
-			paused++
-		case m.State == "up":
-			up++
-		case m.State == "down":
-			down++
-		default:
-			pend++
-		}
 		if m.Enabled && m.LastResponseMS.Valid {
 			ranks = append(ranks, rank{ID: m.ID, Name: m.Name, MS: m.LastResponseMS.Int64})
 		}
@@ -489,15 +440,7 @@ func (s *Server) overviewChartsData(ctx context.Context, key string) (map[string
 	if len(ranks) > 0 {
 		data["SlowestTop"] = fmt.Sprintf("%d ms", ranks[0].MS)
 	}
-	data["Donut"] = donutSVG(up, down, pend, paused)
-	data["Counts"] = map[string]int{"Up": up, "Down": down, "Pending": pend, "Paused": paused}
 	data["MonitorTotal"] = len(svc)
-	data["UpSub"] = "No monitors yet"
-	if enabled := len(svc) - paused; enabled > 0 {
-		data["UpSub"] = fmt.Sprintf("%d of %d active monitors are up", up, enabled)
-	} else if len(svc) > 0 {
-		data["UpSub"] = "All monitors are paused"
-	}
 	return data, nil
 }
 
