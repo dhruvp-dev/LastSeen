@@ -1,12 +1,12 @@
 {{define "content"}}
-<p class="text-sm text-mute mb-6">Incidents open and resolve automatically. The public note appears on the status page.</p>
+<div class="panel-head !px-0 !pt-0 mb-5 border-b border-rule"><div class="sec-head"><div><h2 class="sec-title2">Incidents</h2><p class="sec-sub">Incidents open and resolve automatically. The public note appears on the status page.</p></div></div></div>
 {{if .Incidents}}
-<div class="space-y-4">
+<div class="space-y-5 max-w-4xl">
 {{range .Incidents}}
-  <div class="panel p-5">
+  <div class="panel p-5 {{if .Open}}inc-open{{else}}inc-done{{end}}">
     <div class="flex flex-wrap items-baseline justify-between gap-2">
       <div><a class="font-medium hover:underline" href="/admin/monitors/{{.MonitorID}}">{{.MonitorName}}</a>
-        {{if .Open}}<span class="badge bg-red-50 text-bad border border-red-200 ml-2">Open</span>{{else}}<span class="badge bg-green-50 text-ok border border-green-200 ml-2">Resolved</span>{{end}}</div>
+        <span class="ml-2 st {{if .Open}}st-down{{else}}st-up{{end}}">{{if .Open}}Open{{else}}Resolved{{end}}</span></div>
       <span class="text-sm text-mute num">{{ts .StartedAt}} UTC · {{dur .StartedAt .ResolvedAt}}</span>
     </div>
     <p class="text-sm text-mute mt-2">Cause: {{if .Cause.Valid}}{{.Cause.String}}{{else}}—{{end}}</p>
@@ -24,5 +24,5 @@
   </div>
 {{end}}
 </div>
-{{else}}<div class="panel px-5 py-8 text-sm text-mute">No incidents yet.</div>{{end}}
+{{else}}<div class="panel px-5 py-12 text-center"><p class="mt-3 text-sm text-mute">No incidents yet. Everything has been running smoothly.</p></div>{{end}}
 {{end}}

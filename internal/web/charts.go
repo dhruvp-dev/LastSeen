@@ -124,14 +124,15 @@ type dims struct {
 
 var (
 	overviewDims = dims{720, 250, "min-w-[560px] max-w-[800px]"}
+	cardDims     = dims{360, 220, "min-w-[300px] max-w-[520px]"}
 	detailDims   = dims{1100, 280, "min-w-[800px] max-w-[1500px]"}
 )
 
 const (
 	cLeft, cRight, cTop, cBot = 50, 10, 12, 28
 	colBrand                  = "#292929"
-	colRule                   = "#e4e4e7"
-	colMute                   = "#71717a"
+	colRule                   = "#e5e5e5"
+	colMute                   = "#737373"
 )
 
 const emptyChart = `<p class="text-sm text-mute py-16 text-center">No data yet for this range.</p>`
@@ -199,7 +200,17 @@ func tipTime(b bucket, size time.Duration) string {
 // responseSVG draws average response time as an area chart. Buckets without data break the line;
 // buckets with failed checks get a red marker on the baseline.
 func responseSVG(bs []bucket, size time.Duration, id string, d dims) template.HTML {
+	return responseCompareSVG(bs, nil, size, id, d)
+}
+
+// responseCompareSVG is responseSVG plus an optional dashed line for the previous period (same length as bs).
+func responseCompareSVG(bs, prev []bucket, size time.Duration, id string, d dims) template.HTML {
 	maxV, any := 0.0, false
+	for _, b := range prev {
+		if b.HasMS {
+			maxV = math.Max(maxV, b.Avg)
+		}
+	}
 	for _, b := range bs {
 		if b.HasMS {
 			any = true
@@ -212,7 +223,7 @@ func responseSVG(bs []bucket, size time.Duration, id string, d dims) template.HT
 	if !any {
 		return emptyChart
 	}
-	hi := niceMax(maxV)
+	hi := math.Max(niceMax(maxV), 4) // below 4 ms the whole-number axis labels would repeat
 	f := newFrame(len(bs), d)
 	fmt.Fprintf(f.b, `<defs><linearGradient id="%s" x1="0" y1="0" x2="0" y2="1"><stop offset="0%%" stop-color="%s" stop-opacity="0.22"/><stop offset="100%%" stop-color="%s" stop-opacity="0"/></linearGradient></defs>`, id, colBrand, colBrand)
 	f.grid(0, hi, func(v float64) string { return fmt.Sprintf("%.0f", v) })
@@ -237,6 +248,24 @@ func responseSVG(bs []bucket, size time.Duration, id string, d dims) template.HT
 		fmt.Fprintf(&area, "%sL%.1f %.1f L%.1f %.1f Z", line.String(), f.x(seg[len(seg)-1]), base, f.x(seg[0]), base)
 		fmt.Fprintf(f.b, `<path d="%s" fill="url(#%s)"/><path d="%s" fill="none" stroke="%s" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`,
 			area.String(), id, line.String(), colBrand)
+	}
+	if len(prev) == len(bs) {
+		var pl strings.Builder
+		pen := false
+		for i, b := range prev {
+			if !b.HasMS {
+				pen = false
+				continue
+			}
+			cmd := "L"
+			if !pen {
+				cmd, pen = "M", true
+			}
+			fmt.Fprintf(&pl, "%s%.1f %.1f ", cmd, f.x(i), f.y(b.Avg, 0, hi))
+		}
+		if pl.Len() > 0 {
+			fmt.Fprintf(f.b, `<path d="%s" fill="none" stroke="#a3a3a3" stroke-width="1.5" stroke-dasharray="4 4" stroke-linecap="round" stroke-linejoin="round"/>`, pl.String())
+		}
 	}
 	var seg []int
 	for i, b := range bs {
@@ -306,6 +335,44 @@ func uptimeSVG(bs []bucket, size time.Duration, d dims) template.HTML {
 	return f.close()
 }
 
+// donutSVG draws monitors by status as a ring with the share that is up in the middle.
+func donutSVG(up, down, pending, paused int) template.HTML {
+	total := up + down + pending + paused
+	const r = 76.0
+	circ := 2 * math.Pi * r
+	var b strings.Builder
+	b.WriteString(`<svg viewBox="0 0 200 200" class="mx-auto h-44 w-44" role="img" aria-label="Monitors by status">`)
+	fmt.Fprintf(&b, `<circle cx="100" cy="100" r="%.0f" fill="none" stroke="#e5e5e5" stroke-width="18"/>`, r)
+	segs := 0
+	for _, n := range []int{up, down, pending, paused} {
+		if n > 0 {
+			segs++
+		}
+	}
+	off := 0.0
+	for _, s := range []struct {
+		n   int
+		col string
+	}{{up, "#3d9e22"}, {down, "#dc2626"}, {pending, "#d97706"}, {paused, "#a3a39e"}} {
+		if s.n == 0 {
+			continue
+		}
+		l := circ * float64(s.n) / float64(total)
+		gap := 0.0
+		if segs > 1 {
+			gap = 3
+		}
+		fmt.Fprintf(&b, `<circle cx="100" cy="100" r="%.0f" fill="none" stroke="%s" stroke-width="18" stroke-dasharray="%.2f %.2f" stroke-dashoffset="%.2f" transform="rotate(-90 100 100)"/>`, r, s.col, math.Max(l-gap, 0.5), circ, -off)
+		off += l
+	}
+	label, value := "Up", "—"
+	if enabled := total - paused; enabled > 0 {
+		value = fmt.Sprintf("%.0f%%", float64(up)*100/float64(enabled))
+	}
+	fmt.Fprintf(&b, `<text x="100" y="94" text-anchor="middle" font-size="12" fill="%s">%s</text><text x="100" y="122" text-anchor="middle" font-size="28" fill="#0a0a0a">%s</text></svg>`, colMute, label, value)
+	return template.HTML(b.String())
+}
+
 // ---- data + handlers ----
 
 func (s *Server) chartData(ctx context.Context, monitorID int64, rng chartRange) ([]bucket, error) {
@@ -319,15 +386,29 @@ func (s *Server) chartData(ctx context.Context, monitorID int64, rng chartRange)
 	return bucketize(pts, now, rng.Size, n), nil
 }
 
+// prevChartData buckets the period before the current one, shifted forward so it lines up with it.
+func (s *Server) prevChartData(ctx context.Context, rng chartRange) ([]bucket, error) {
+	shifted := time.Now().Add(-rng.Span)
+	pts, err := s.db.Series(ctx, 0, shifted.Add(-rng.Span-rng.Size).UnixMilli())
+	if err != nil {
+		return nil, err
+	}
+	return bucketize(pts, shifted, rng.Size, int(rng.Span/rng.Size)), nil
+}
+
 func (s *Server) overviewChartsData(ctx context.Context, key string) (map[string]any, error) {
 	rng := parseRange(key)
 	bs, err := s.chartData(ctx, 0, rng)
 	if err != nil {
 		return nil, err
 	}
+	prevBs, err := s.prevChartData(ctx, rng)
+	if err != nil {
+		return nil, err
+	}
 	now := time.Now()
 	data := map[string]any{"Range": rng.Key, "Ranges": chartRanges,
-		"Response": responseSVG(bs, rng.Size, "g-resp", detailDims), "Uptime": uptimeSVG(bs, rng.Size, overviewDims),
+		"Response": responseCompareSVG(bs, prevBs, rng.Size, "g-resp", detailDims), "Uptime": uptimeSVG(bs, rng.Size, cardDims),
 		"Headline": "—", "HeadSub": "No checks in this period"}
 	cur, err := s.db.CheckWindow(ctx, now.Add(-rng.Span).UnixMilli(), now.UnixMilli()+1)
 	if err != nil {
@@ -368,6 +449,55 @@ func (s *Server) overviewChartsData(ctx context.Context, key string) (map[string
 			Duration: notifications.HumanDuration(end.Sub(start)), Open: !i.ResolvedAt.Valid})
 	}
 	data["Incidents"], data["OpenCount"] = incs, open
+
+	svc, err := s.db.ServiceRows(ctx)
+	if err != nil {
+		return nil, err
+	}
+	type rank struct {
+		ID         int64
+		Name       string
+		MS         int64
+		Pct, Place int
+	}
+	var up, down, pend, paused int
+	var ranks []rank
+	for _, m := range svc {
+		switch {
+		case !m.Enabled:
+			paused++
+		case m.State == "up":
+			up++
+		case m.State == "down":
+			down++
+		default:
+			pend++
+		}
+		if m.Enabled && m.LastResponseMS.Valid {
+			ranks = append(ranks, rank{ID: m.ID, Name: m.Name, MS: m.LastResponseMS.Int64})
+		}
+	}
+	sort.Slice(ranks, func(i, j int) bool { return ranks[i].MS > ranks[j].MS })
+	if len(ranks) > 5 {
+		ranks = ranks[:5]
+	}
+	for i := range ranks {
+		ranks[i].Place = i + 1
+		ranks[i].Pct = int(math.Max(float64(ranks[i].MS)*100/float64(ranks[0].MS), 6))
+	}
+	data["Slowest"], data["SlowestTop"] = ranks, "—"
+	if len(ranks) > 0 {
+		data["SlowestTop"] = fmt.Sprintf("%d ms", ranks[0].MS)
+	}
+	data["Donut"] = donutSVG(up, down, pend, paused)
+	data["Counts"] = map[string]int{"Up": up, "Down": down, "Pending": pend, "Paused": paused}
+	data["MonitorTotal"] = len(svc)
+	data["UpSub"] = "No monitors yet"
+	if enabled := len(svc) - paused; enabled > 0 {
+		data["UpSub"] = fmt.Sprintf("%d of %d active monitors are up", up, enabled)
+	} else if len(svc) > 0 {
+		data["UpSub"] = "All monitors are paused"
+	}
 	return data, nil
 }
 

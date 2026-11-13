@@ -103,7 +103,7 @@ func TestPublicAllOperational(t *testing.T) {
 	if code != 200 || !strings.Contains(body, "All systems operational") || !strings.Contains(body, "My Blog") || !strings.Contains(body, "42 ms") {
 		t.Fatalf("code=%d body=%s", code, body)
 	}
-	if n := strings.Count(body, "<rect "); n != 90 {
+	if n := strings.Count(body, `<rect x="`); n != 90 { // day bars only (the logo sprite has its own rects)
 		t.Errorf("want 90 day bars, got %d", n)
 	}
 	if !strings.Contains(body, "Last checked") || strings.Contains(body, "No checks recorded") {
