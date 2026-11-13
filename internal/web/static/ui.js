@@ -218,3 +218,25 @@ document.addEventListener('input', function (e) {
     r.hidden = !!q && r.getAttribute('data-row').toLowerCase().indexOf(q) === -1;
   });
 });
+
+// "Last checked 3 minutes ago" keeps ticking while the page is open. Elapsed time is measured from the
+// server's own clock at render (data-now) plus time since load, so a wrong clock on the visitor's device
+// cannot make it lie. Wording mirrors agoText in public.go.
+(function () {
+  var loaded = Date.now();
+  function ago(ms) {
+    var s = Math.max(0, Math.floor(ms / 1000));
+    if (s < 60) return 'just now';
+    var n = Math.floor(s / 60), unit = 'minute';
+    if (n >= 60) { n = Math.floor(n / 60); unit = 'hour'; }
+    if (unit === 'hour' && n >= 24) { n = Math.floor(n / 24); unit = 'day'; }
+    return n + ' ' + unit + (n === 1 ? '' : 's') + ' ago';
+  }
+  function tick() {
+    document.querySelectorAll('[data-ago]').forEach(function (el) {
+      var at = Number(el.getAttribute('data-ago')), now = Number(el.getAttribute('data-now'));
+      if (at && now) el.textContent = ago(now - at + (Date.now() - loaded));
+    });
+  }
+  setInterval(tick, 15000);
+})();

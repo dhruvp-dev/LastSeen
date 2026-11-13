@@ -820,3 +820,41 @@ func TestPublicBannerTone(t *testing.T) {
 		t.Error("system status card missing")
 	}
 }
+
+func TestAgoText(t *testing.T) {
+	for d, want := range map[time.Duration]string{
+		-5 * time.Second: "just now", 0: "just now", 59 * time.Second: "just now",
+		time.Minute: "1 minute ago", 119 * time.Second: "1 minute ago", 5 * time.Minute: "5 minutes ago", 59*time.Minute + 59*time.Second: "59 minutes ago",
+		time.Hour: "1 hour ago", 3*time.Hour + 20*time.Minute: "3 hours ago", 23*time.Hour + 59*time.Minute: "23 hours ago",
+		24 * time.Hour: "1 day ago", 49 * time.Hour: "2 days ago",
+	} {
+		if got := agoText(d); got != want {
+			t.Errorf("agoText(%v) = %q, want %q", d, got, want)
+		}
+	}
+}
+
+func TestPublicFooterShowsRelativeTimeAndNoBackToTop(t *testing.T) {
+	e := newEnv(t)
+	id := e.add(t, "Blog", true)
+	e.apply(t, id, true, time.Now())
+	e.heartbeat(t, time.Now())
+	_, body := e.get("/")
+	if strings.Contains(body, "Back to top") {
+		t.Error("back-to-top link should be gone")
+	}
+	if !strings.Contains(body, `>just now</time>`) || !strings.Contains(body, "Last checked <time") {
+		t.Errorf("footer should say 'Last checked just now':\n%s", body[strings.Index(body, "<footer"):])
+	}
+	if !strings.Contains(body, `title="`) || !strings.Contains(body, "UTC") {
+		t.Error("exact UTC time should stay available as a tooltip")
+	}
+	// A check from 7 minutes ago reads as minutes, never "just now".
+	e2 := newEnv(t)
+	id2 := e2.add(t, "Old", true)
+	e2.apply(t, id2, true, time.Now().Add(-7*time.Minute))
+	e2.heartbeat(t, time.Now())
+	if _, b := e2.get("/"); !strings.Contains(b, ">7 minutes ago</time>") {
+		t.Errorf("want '7 minutes ago', got footer: %s", b[strings.Index(b, "<footer"):])
+	}
+}

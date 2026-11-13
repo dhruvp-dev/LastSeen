@@ -122,13 +122,35 @@ func (s *Server) public(w http.ResponseWriter, r *http.Request) {
 		data["RangeLabel"] = last.Format("Jan 2006")
 	}
 	if lastChecked > 0 {
-		data["LastChecked"] = time.UnixMilli(lastChecked).UTC().Format(longStamp + " UTC")
+		at := time.UnixMilli(lastChecked)
+		data["LastChecked"] = at.UTC().Format(longStamp + " UTC")
+		data["LastCheckedISO"] = at.UTC().Format(time.RFC3339)
+		data["LastCheckedAgo"] = agoText(now.Sub(at))
+		data["LastCheckedMS"], data["NowMS"] = lastChecked, now.UnixMilli()
 	}
 	w.Header().Set("Cache-Control", "public, max-age=30")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := s.pages["public"].ExecuteTemplate(w, "public", data); err != nil {
 		s.log.Error("render public", "err", err)
 	}
+}
+
+// agoText renders an elapsed time the way the status page shows it: "just now", "3 minutes ago", "2 hours ago".
+// The same rules live in ui.js so the text can keep ticking while the page stays open.
+func agoText(d time.Duration) string {
+	n, unit := int(d/(24*time.Hour)), "day"
+	switch {
+	case d < time.Minute:
+		return "just now"
+	case d < time.Hour:
+		n, unit = int(d/time.Minute), "minute"
+	case d < 24*time.Hour:
+		n, unit = int(d/time.Hour), "hour"
+	}
+	if n == 1 {
+		return "1 " + unit + " ago"
+	}
+	return fmt.Sprintf("%d %ss ago", n, unit)
 }
 
 // overallTone is the banner's colour family: ok, warn (monitoring paused), bad (something is down) or none.

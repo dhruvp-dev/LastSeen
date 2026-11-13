@@ -15,8 +15,8 @@
 <header class="py-4">
   <div class="mx-auto max-w-2xl px-6 flex items-center justify-between">
     <span class="inline-flex items-center gap-2.5 text-lg font-medium tracking-[-0.02em] text-pub-hi"><svg class="ic h-7 w-7"><use href="#i-logo"/></svg>{{.SiteTitle}}</span>
-    <button type="button" data-theme-toggle class="pub-btn px-2.5 py-1.5 text-xs" aria-label="Toggle light and dark theme">
-      <span class="theme-sun"><svg class="ic"><use href="#i-sun"/></svg>Light</span><span class="theme-moon"><svg class="ic"><use href="#i-moon"/></svg>Dark</span>
+    <button type="button" data-theme-toggle class="pub-btn inline-flex h-9 w-9 items-center justify-center rounded-lg" aria-label="Toggle light and dark theme" title="Toggle light and dark theme">
+      <span class="theme-sun"><svg class="ic h-[18px] w-[18px]"><use href="#i-sun"/></svg></span><span class="theme-moon"><svg class="ic h-[18px] w-[18px]"><use href="#i-moon"/></svg></span>
     </button>
   </div>
 </header>
@@ -76,9 +76,8 @@
   </section>
 </main>
 <footer class="w-full pt-8 pb-8 flex justify-center">
-  <div class="w-full max-w-2xl px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-pub-mute">
-    <span class="font-mono num text-pub-subtle">{{if .LastChecked}}Last checked {{.LastChecked}}{{else}}No checks recorded yet{{end}} · All times UTC</span>
-    <a href="#" class="pub-btn inline-flex items-center gap-1.5"><span class="link-draw">Back to top</span><svg class="ic"><use href="#i-up"/></svg></a>
+  <div class="w-full max-w-2xl px-6 text-xs text-pub-mute">
+    <span class="font-mono num text-pub-subtle">{{if .LastChecked}}Last checked <time datetime="{{.LastCheckedISO}}" title="{{.LastChecked}}" data-ago="{{.LastCheckedMS}}" data-now="{{.NowMS}}">{{.LastCheckedAgo}}</time>{{else}}No checks recorded yet{{end}} · All times UTC</span>
   </div>
 </footer>
 <div id="strip-tooltip" class="strip-tooltip" role="tooltip" aria-hidden="true">
