@@ -1,0 +1,11 @@
+.git
+.github
+bin
+data
+tools
+*.db
+*.db-wal
+*.db-shm
+.env
+.env.*
+deploy
