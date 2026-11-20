@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -29,9 +30,11 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
+	loadDotEnv(".env")
+
 	c := &Config{
-		Addr:              get("LASTSEEN_ADDR", "127.0.0.1:8080"),
-		DBPath:            get("LASTSEEN_DB", "./data/lastseen.db"),
+		Addr:              resolveAddr(),
+		DBPath:            resolveDBPath(),
 		BaseURL:           get("LASTSEEN_BASE_URL", "https://status.dhruvp.tech"),
 		AdminPasswordHash: os.Getenv("LASTSEEN_ADMIN_PASSWORD_HASH"),
 		SMTP: SMTP{
@@ -55,6 +58,53 @@ func Load() (*Config, error) {
 	c.AllowPrivate = os.Getenv("LASTSEEN_DEV_ALLOW_PRIVATE") == "1"
 	c.InsecureCookies = os.Getenv("LASTSEEN_DEV_INSECURE_COOKIES") == "1"
 	return c, nil
+}
+
+func resolveAddr() string {
+	if addr := os.Getenv("LASTSEEN_ADDR"); addr != "" {
+		return addr
+	}
+	// On Heroku and similar container environments, PORT is set dynamically.
+	if port := os.Getenv("PORT"); port != "" {
+		return ":" + port
+	}
+	return "127.0.0.1:8080"
+}
+
+func resolveDBPath() string {
+	tursoURL := getFirst("LASTSEEN_TURSO_URL", "TURSO_DATABASE_URL")
+	token := getFirst("LASTSEEN_TURSO_AUTH_TOKEN", "TURSO_AUTH_TOKEN")
+
+	dbPath := tursoURL
+	if dbPath == "" {
+		dbPath = get("LASTSEEN_DB", "./data/lastseen.db")
+	}
+
+	if isRemoteURL(dbPath) && token != "" && !strings.Contains(dbPath, "authToken=") {
+		sep := "?"
+		if strings.Contains(dbPath, "?") {
+			sep = "&"
+		}
+		dbPath += sep + "authToken=" + token
+	}
+	return dbPath
+}
+
+func isRemoteURL(path string) bool {
+	return strings.HasPrefix(path, "libsql://") ||
+		strings.HasPrefix(path, "https://") ||
+		strings.HasPrefix(path, "http://") ||
+		strings.HasPrefix(path, "wss://") ||
+		strings.HasPrefix(path, "ws://")
+}
+
+func getFirst(keys ...string) string {
+	for _, k := range keys {
+		if v := os.Getenv(k); v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 func get(k, def string) string {
@@ -86,4 +136,30 @@ func durEnv(k string, def time.Duration) (time.Duration, error) {
 		return 0, fmt.Errorf("%s: invalid duration %q", k, v)
 	}
 	return d, nil
+}
+
+func loadDotEnv(filename string) {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return
+	}
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(parts[0])
+		val := strings.TrimSpace(parts[1])
+		if len(val) >= 2 && ((val[0] == '"' && val[len(val)-1] == '"') || (val[0] == '\'' && val[len(val)-1] == '\'')) {
+			val = val[1 : len(val)-1]
+		}
+		if os.Getenv(key) == "" {
+			os.Setenv(key, val)
+		}
+	}
 }
