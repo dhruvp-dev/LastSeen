@@ -170,3 +170,22 @@ func TestSniffImageIgnoresClaimsAndMarkup(t *testing.T) {
 		}
 	}
 }
+
+func TestSanitizeSVGStripsDarkMedia(t *testing.T) {
+	input := []byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <style>
+    path.bg { fill: #0e1f3b; }
+    @media (prefers-color-scheme: dark) {
+      path.bg { fill: #ffffff; }
+    }
+  </style>
+  <path class="bg" d="M1,1 H13 V9 H4 V15 H1 Z" />
+</svg>`)
+	got := string(SanitizeSVG(input))
+	if strings.Contains(got, "prefers-color-scheme") || strings.Contains(got, "#ffffff") {
+		t.Fatalf("dark media query was not stripped: %s", got)
+	}
+	if !strings.Contains(got, "#0e1f3b") {
+		t.Fatalf("canonical color was lost: %s", got)
+	}
+}

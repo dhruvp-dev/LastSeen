@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/dhruvp/lastseen/internal/database"
+	"github.com/dhruvp/lastseen/internal/monitor"
 )
 
 const (
@@ -132,6 +133,9 @@ func (s *Server) refreshIcon(ctx context.Context, m *database.Monitor, old *data
 // serveIcon writes image bytes with headers that make even an attacker-supplied SVG inert: nosniff, and
 // a CSP that forbids scripts and sandboxes the document if the URL is ever opened directly.
 func serveIcon(w http.ResponseWriter, scope, contentType string, data []byte, maxAge time.Duration) {
+	if contentType == "image/svg+xml" {
+		data = monitor.SanitizeSVG(data)
+	}
 	h := w.Header()
 	h.Set("Content-Type", contentType)
 	h.Set("Content-Length", strconv.Itoa(len(data)))

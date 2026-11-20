@@ -24,9 +24,16 @@ const (
 var ErrNoIcon = errors.New("no usable icon found")
 
 var (
-	linkTagRe = regexp.MustCompile(`(?is)<link\b[^>]*>`)
-	attrRe    = regexp.MustCompile(`(?is)([a-z][a-z0-9:-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))`)
+	linkTagRe   = regexp.MustCompile(`(?is)<link\b[^>]*>`)
+	attrRe      = regexp.MustCompile(`(?is)([a-z][a-z0-9:-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))`)
+	darkMediaRe = regexp.MustCompile(`(?is)@media\s*\(\s*prefers-color-scheme\s*:\s*dark\s*\)\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}`)
 )
+
+// SanitizeSVG strips dark mode media queries from SVG icons so they don't turn white/invisible
+// when embedded on light surfaces.
+func SanitizeSVG(data []byte) []byte {
+	return darkMediaRe.ReplaceAll(data, nil)
+}
 
 // iconCandidates lists the icon URLs an HTML document declares, best first: rel="icon" (including
 // "shortcut icon") before apple-touch-icon. Only absolute http(s) URLs are returned.
@@ -158,6 +165,9 @@ func (c *Checker) FetchIcon(ctx context.Context, pageURL string) ([]byte, string
 			continue
 		}
 		if ct := sniffImage(data); ct != "" {
+			if ct == "image/svg+xml" {
+				data = SanitizeSVG(data)
+			}
 			return data, ct, nil
 		}
 	}
