@@ -106,6 +106,11 @@ func mustOpen(cfg *config.Config, log *slog.Logger) *database.DB {
 		log.Error("open database", "err", err)
 		os.Exit(1)
 	}
+	if db.IsRemote() {
+		log.Info("connected to database", "type", "turso (libsql remote)")
+	} else {
+		log.Info("connected to database", "type", "local sqlite", "path", cfg.DBPath)
+	}
 	return db
 }
 
