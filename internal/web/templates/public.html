@@ -77,7 +77,7 @@
 </main>
 <footer class="w-full pt-8 pb-8 flex justify-center">
   <div class="w-full max-w-2xl px-6 text-xs text-pub-mute">
-    <span class="font-mono num text-pub-subtle">{{if .LastChecked}}Last checked <time datetime="{{.LastCheckedISO}}" title="{{.LastChecked}}" data-ago="{{.LastCheckedMS}}" data-now="{{.NowMS}}">{{.LastCheckedAgo}}</time>{{else}}No checks recorded yet{{end}} · All times UTC</span>
+    <span class="text-pub-subtle">{{if .LastChecked}}Last checked <time datetime="{{.LastCheckedISO}}" title="{{.LastChecked}}" data-ago="{{.LastCheckedMS}}" data-now="{{.NowMS}}">{{.LastCheckedAgo}}</time>{{else}}No checks recorded yet{{end}} · All times UTC</span>
   </div>
 </footer>
 <div id="strip-tooltip" class="strip-tooltip" role="tooltip" aria-hidden="true">
