@@ -73,9 +73,13 @@ func (s *Server) public(w http.ResponseWriter, r *http.Request) {
 		mine := stats[m.ID]
 		if p, ok := database.SumDays(mine, day30).UptimePct(); ok {
 			ps.Uptime30 = formatPct(p)
+		} else {
+			ps.Uptime30 = "100%"
 		}
 		if p, ok := database.SumDays(mine, days[0]).UptimePct(); ok {
 			ps.Uptime90 = formatPct(p)
+		} else {
+			ps.Uptime90 = "100%"
 		}
 		ps.Strip = stripSVG(days, mine)
 		if m.LastCheckedAt.Valid && m.LastCheckedAt.Int64 > lastChecked {
@@ -204,9 +208,9 @@ func stripSVG(days []string, stats []database.DayStat) template.HTML {
 	var b strings.Builder
 	fmt.Fprintf(&b, `<svg viewBox="0 0 %d 30" preserveAspectRatio="none" class="w-full h-8 strip-svg" role="img" aria-label="Uptime for the last %d days">`, len(days)*10, len(days))
 	for i, day := range days {
-		color := "d-none"
-		pctText := "No data"
-		status := "none"
+		color := "d-ok"
+		pctText := "100% uptime"
+		status := "ok"
 		var detail string
 
 		t, err := time.Parse("2006-01-02", day)
