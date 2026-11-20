@@ -10,9 +10,9 @@
 <link rel="stylesheet" href="/static/app.css">
 <script src="/static/ui.js" defer></script>
 </head>
-<body class="pub antialiased">
+<body class="pub antialiased min-h-screen flex flex-col justify-between">
 {{template "icons"}}
-<header class="py-4">
+<header class="py-3 sm:py-4 shrink-0">
   <div class="mx-auto max-w-2xl px-6 flex items-center justify-between">
     <span class="inline-flex items-center gap-2.5 text-lg font-medium tracking-[-0.02em] text-pub-hi"><svg class="ic h-7 w-7"><use href="#i-logo"/></svg>{{.SiteTitle}}</span>
     <button type="button" data-theme-toggle class="pub-btn inline-flex h-9 w-9 items-center justify-center rounded-lg" aria-label="Toggle light and dark theme" title="Toggle light and dark theme">
@@ -20,7 +20,7 @@
     </button>
   </div>
 </header>
-<main class="mx-auto max-w-2xl space-y-6 px-6 pt-8 pb-6 sm:pt-12">
+<main class="mx-auto w-full max-w-2xl space-y-4 sm:space-y-5 px-6 pt-2 sm:pt-4 pb-4 flex-1">
   <section class="banner banner-{{.Tone}}" aria-live="polite">
     <div class="banner-head"><svg class="ic banner-ico" aria-hidden="true"><use href="#i-status-{{.Tone}}"/></svg><h1>{{.Overall}}</h1></div>
     {{if .Detail}}<p class="banner-body">{{.Detail}}</p>{{end}}
@@ -75,7 +75,7 @@
     {{else}}<p class="pcard-empty">No incidents in the last 90 days.</p>{{end}}
   </section>
 </main>
-<footer class="w-full pt-8 pb-8 flex justify-center">
+<footer class="w-full py-4 mt-auto shrink-0 flex justify-center">
   <div class="w-full max-w-2xl px-6 text-xs text-pub-mute">
     <span class="text-pub-subtle">{{if .LastChecked}}Last checked <time datetime="{{.LastCheckedISO}}" title="{{.LastChecked}}" data-ago="{{.LastCheckedMS}}" data-now="{{.NowMS}}">{{.LastCheckedAgo}}</time>{{else}}No checks recorded yet{{end}} · All times UTC</span>
   </div>
