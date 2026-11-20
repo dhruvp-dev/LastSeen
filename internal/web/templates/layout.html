@@ -17,7 +17,7 @@
 <body class="bg-canvas" hx-headers='{"X-CSRF-Token":"{{.CSRF}}"}'>
 {{template "icons"}}
 <div class="md:flex min-h-screen">
-  <aside class="sidebar md:flex md:flex-col md:w-60 md:shrink-0 md:sticky md:top-3 md:m-3 md:mr-0 md:h-[calc(100vh-1.5rem)] md:self-start md:overflow-y-auto md:rounded-2xl text-ink px-3 md:px-4">
+  <aside class="sidebar md:flex md:flex-col md:w-60 md:shrink-0 md:sticky md:top-3 md:m-3 md:mr-0 md:max-h-[calc(100vh-1.5rem)] md:self-start md:overflow-y-auto md:rounded-2xl text-ink px-3 md:px-4">
     <div class="md:flex-1 pt-4 md:pt-5">
       <div class="flex items-center justify-between gap-2">
         <a href="/admin" class="brand-link flex items-center gap-2.5 px-2 text-lg font-medium tracking-[-0.025em] text-ink whitespace-nowrap" title="Last Seen" data-brand><svg class="brand-logo ic h-7 w-7 shrink-0 text-ink"><use href="#i-logo"/></svg><span class="brand-expand" aria-hidden="true"><svg class="ic"><use href="#i-sidebar"/></svg></span><span class="nav-label">Last Seen</span></a>
