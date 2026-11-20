@@ -198,3 +198,35 @@ func TestBackupSnapshotAndRetention(t *testing.T) {
 		t.Error("keep=0 accepted")
 	}
 }
+
+func TestBackupRemoteRejected(t *testing.T) {
+	db := &DB{remote: true}
+	_, err := db.Backup(context.Background(), t.TempDir(), 3, time.Now())
+	if err == nil || !strings.Contains(err.Error(), "Turso") {
+		t.Errorf("expected Turso rejection error, got %v", err)
+	}
+}
+
+func TestSplitSQLStatements(t *testing.T) {
+	sql := `
+-- A comment before statement
+CREATE TABLE t1 (id INT, val TEXT DEFAULT 'hello;world');
+-- Another comment
+ALTER TABLE t1 ADD COLUMN val2 TEXT;
+
+INSERT INTO t1 (id, val) VALUES (1, 'escaped '' quote ; here');
+`
+	stmts := splitSQLStatements(sql)
+	if len(stmts) != 3 {
+		t.Fatalf("expected 3 statements, got %d: %q", len(stmts), stmts)
+	}
+	if !strings.HasPrefix(stmts[0], "CREATE TABLE") {
+		t.Errorf("statement 1 mismatch: %q", stmts[0])
+	}
+	if !strings.HasPrefix(stmts[1], "ALTER TABLE") {
+		t.Errorf("statement 2 mismatch: %q", stmts[1])
+	}
+	if !strings.HasPrefix(stmts[2], "INSERT INTO") {
+		t.Errorf("statement 3 mismatch: %q", stmts[2])
+	}
+}

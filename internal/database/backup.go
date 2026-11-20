@@ -16,6 +16,9 @@ const backupPrefix = "lastseen-"
 // the web server and worker are running), then keeps only the newest `keep` snapshots.
 // It returns the path of the new snapshot.
 func (db *DB) Backup(ctx context.Context, dir string, keep int, now time.Time) (string, error) {
+	if db.remote {
+		return "", fmt.Errorf("snapshot not supported for remote Turso/libSQL database: backups are managed via Turso")
+	}
 	if keep < 1 {
 		return "", fmt.Errorf("keep must be at least 1")
 	}
