@@ -9,3 +9,10 @@ tools
 .env
 .env.*
 deploy
+*.md
+.claude
+.agents
+.cursor
+.gemini
+.vscode
+.idea

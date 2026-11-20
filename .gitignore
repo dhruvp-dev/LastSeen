@@ -6,13 +6,11 @@ tools/tailwindcss
 .env.*
 !.env.example
 
-# Claude files
+# Claude and Agent files
 CLAUDE.md
 claude.md
 *claude*.md
 .claude/
-
-# Agent files
 AGENTS.md
 agents.md
 AGENT.md
@@ -20,4 +18,17 @@ agent.md
 *agents*.md
 *agent*.md
 .agents/
+.gemini/
+.cursor/
+.cursorrules
+.windsurf/
+.windsurfrules
+
+# IDE and OS metadata
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
 
