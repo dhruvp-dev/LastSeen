@@ -9,6 +9,7 @@
 
 /* Public status page: tokens taken from the portfolio (dark by default, .light switches). */
 :root {
+  color-scheme: light;
   --bg-color: #edede8; --text-color: #292929; --text-muted: #737373; --text-subtle: #7d7d7b;
   --text-highlight: #0a0a0a; --card-bg: #ffffff; --border-color: rgba(0,0,0,0.12);
   --selection-bg: #141414; --selection-text: #edede8;
@@ -16,6 +17,7 @@
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 :root.dark {
+  color-scheme: dark;
   --bg-color: #161615; --text-color: #e6e5e1; --text-muted: #9a9993; --text-subtle: #8a8984;
   --text-highlight: #fafafa; --card-bg: #1c1c1b; --border-color: rgba(250,250,247,0.10);
   --selection-bg: #fafaf7; --selection-text: #161615;
@@ -323,7 +325,7 @@
 }
 
 @layer components {
-  .fav-pub { width: 1.25rem; height: 1.25rem; padding: 1px; border: 0; border-radius: 5px; }
+  .fav-pub { width: 1.25rem; height: 1.25rem; padding: 0; border: 0; border-radius: 5px; background: transparent; }
 }
 
 /* Public status page: status banner (tinted header bar + sentence) and bordered cards. */
@@ -348,3 +350,73 @@
   .pcard-list > li { border-top: 1px solid var(--border-color); padding: 1rem 1.25rem; }
   .pcard-empty { border-top: 1px solid var(--border-color); padding: 1rem 1.25rem; font-size: .875rem; color: var(--text-muted); }
 }
+
+/* Admin dark mode (class `adark`, own storage key, so the public page's theme is unaffected). BoardUI neutrals:
+   950 canvas, 900 card, 800 inset/hover, 50 text, 400 muted. KPI cards are deliberately left light for now. */
+  .adm-sun, .adm-moon { display: inline-flex; align-items: center; }
+  .adm-sun { display: none; }
+  :root.adark .adm-sun { display: inline-flex; } :root.adark .adm-moon { display: none; }
+  :root.adark { color-scheme: dark; }
+  :root.adark body, :root.adark .bg-canvas { background-color: #0a0a0a; color: #fafafa; }
+  :root.adark .bg-paper, :root.adark .bg-surface, :root.adark .panel, :root.adark .tile { background-color: #171717; }
+  :root.adark .bg-surface\/60 { background-color: rgba(38,38,38,.6); }
+  :root.adark .text-ink { color: #fafafa; }
+  :root.adark .text-mute, :root.adark .nav-group, :root.adark .sec-sub { color: #a3a3a3; }
+  :root.adark .text-mute\/60 { color: #737373; }
+  :root.adark .border-rule, :root.adark .panel, :root.adark .tile { border-color: #262626; }
+  :root.adark .divide-rule > :not([hidden]) ~ :not([hidden]) { border-color: #262626; }
+  :root.adark .ring-paper { --tw-ring-color: #0a0a0a; }
+  :root.adark .field { background-color: #171717; color: #fafafa; border-color: #333; }
+  :root.adark .field::placeholder { color: #737373; }
+  :root.adark .field:focus { border-color: #fafafa; --tw-ring-color: #fafafa; }
+  :root.adark ::selection { background: #404040; color: #fafafa; }
+  :root.adark input, :root.adark textarea, :root.adark select { caret-color: #fafafa; accent-color: #fafafa; }
+  :root.adark { scrollbar-color: #404040 transparent; }
+  :root.adark :focus-visible, :root.adark .btn:focus-visible, :root.adark .nav-link:focus-visible, :root.adark .icon-btn:focus-visible, :root.adark .seg-btn:focus-visible { outline-color: #fafafa; }
+  /* Buttons */
+  :root.adark .btn { background: #fafafa; border-color: #fafafa; color: #0a0a0a; }
+  :root.adark .btn:hover { background: #e5e5e5; }
+  :root.adark .btn-quiet { background: #262626; color: #fafafa; }
+  :root.adark .icon-btn { background: #171717; border-color: #262626; color: #fafafa; }
+  @media (hover: hover) and (pointer: fine) { :root.adark .icon-btn:hover { background: #262626; } }
+  :root.adark .seg { background: #171717; border-color: #262626; }
+  :root.adark .seg-btn[aria-pressed="true"] { background: #fafafa; color: #0a0a0a; }
+  @media (hover: hover) and (pointer: fine) { :root.adark .seg-btn[aria-pressed="false"]:hover { color: #fafafa; } }
+  :root.adark .bg-ink { background-color: #fafafa; color: #0a0a0a; }
+  /* Sidebar */
+  :root.adark .sidebar { background: #171717; }
+  :root.adark .nav-link { color: #d4d4d4; }
+  :root.adark .nav-link .ic { color: #a3a3a3; }
+  @media (hover: hover) and (pointer: fine) { :root.adark .nav-link:hover { background: rgba(255,255,255,.06); color: #fafafa; } :root.adark .nav-link:hover .ic { color: #fafafa; } :root.adark .nav-link[aria-current="page"]:hover { background: #262626; } }
+  :root.adark .nav-link[aria-current="page"] { background: #262626; border-color: #333; box-shadow: none; color: #fafafa; }
+  :root.adark .nav-link[aria-current="page"] .ic { color: #fafafa; }
+  :root.adark .brand-expand { background: #262626; border-color: #333; }
+  /* Cards, tables, modal */
+  :root.adark .card { background: #171717; }
+  :root.adark .inset { background: #262626; }
+  :root.adark .hero { background: #171717; border-color: #262626; }
+  :root.adark .modal-panel { background: #171717; border-color: #333; box-shadow: rgba(0,0,0,.6) 0 12px 45px 0; }
+  :root.adark .modal-backdrop { background: rgba(0,0,0,.65); }
+  @media (hover: hover) and (pointer: fine) { :root.adark tbody tr:hover { background-color: rgba(255,255,255,.04); } }
+  :root.adark .fav { border-color: #333; }
+  /* Status colours, brightened for dark surfaces */
+  :root.adark .st-up { background: rgba(74,222,128,.14); color: #4ade80; }
+  :root.adark .st-down { background: rgba(248,113,113,.14); color: #f87171; }
+  :root.adark .st-pending { background: rgba(251,191,36,.14); color: #fbbf24; }
+  :root.adark .st-paused { background: #262626; color: #a3a3a3; }
+  :root.adark .st-info { background: rgba(129,140,248,.16); color: #a5b4fc; }
+  :root.adark .chip-stone { background: #262626; color: #d4d4d4; }
+  :root.adark .bg-green-50 { background-color: rgba(74,222,128,.14); }
+  :root.adark .bg-red-50 { background-color: rgba(248,113,113,.14); }
+  :root.adark .border-green-200 { border-color: rgba(74,222,128,.3); }
+  :root.adark .text-ok { color: #4ade80; } :root.adark .text-bad { color: #f87171; } :root.adark .text-red-700 { color: #fca5a5; }
+  /* Charts (inline SVG with presentation attributes) */
+  :root.adark svg line[stroke="#e5e5e5"] { stroke: #3a3a3a; }
+  :root.adark svg text[fill="#737373"] { fill: #a3a3a3; }
+  :root.adark svg rect[fill="#ececec"] { fill: #3a3a3a; }
+  :root.adark .text-brand { color: #fafafa; }
+  /* KPI cards stay exactly as in light mode */
+  :root.adark .kpi { color: #0a0a0a; }
+  :root.adark .kpi .text-mute { color: #737373; }
+  :root.adark .kpi .text-ok { color: #3d9e22; } :root.adark .kpi .text-bad { color: #dc2626; }
+  :root.adark .kpi .bg-green-50 { background-color: #f0fdf4; } :root.adark .kpi .bg-red-50 { background-color: #fef2f2; }

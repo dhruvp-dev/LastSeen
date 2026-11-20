@@ -7,6 +7,7 @@
 <title>{{.Title}} · Last Seen</title>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 <script src="/static/sidebar.js"></script>
+<script src="/static/admin-theme.js"></script>
 <link rel="stylesheet" href="/static/app.css">
 <meta name="htmx-config" content='{"includeIndicatorStyles":false,"allowEval":false,"allowScriptTags":false}'>
 <script src="/static/htmx.min.js" defer></script>
@@ -45,6 +46,7 @@
         <h1 class="truncate font-medium">{{.Title}}</h1>
       </nav>
       <div class="flex items-center gap-2">
+        <button type="button" data-admin-theme-toggle class="icon-btn" aria-label="Toggle light and dark theme" title="Toggle light and dark theme"><span class="adm-sun"><svg class="ic"><use href="#i-sun"/></svg></span><span class="adm-moon"><svg class="ic"><use href="#i-moon"/></svg></span></button>
         <a href="/admin/incidents" class="icon-btn relative" aria-label="Incidents"><svg class="ic"><use href="#i-bell"/></svg>{{if .OpenIncidents}}<span class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-bad ring-2 ring-paper"></span>{{end}}</a>
         <div class="hidden sm:flex h-9 items-center gap-2 rounded-xl border border-rule bg-paper pl-1 pr-3 text-sm"><span class="flex h-7 w-7 items-center justify-center rounded-full bg-ink text-xs font-medium text-white" aria-hidden="true">{{if .AdminInitial}}{{.AdminInitial}}{{else}}A{{end}}</span><span class="font-medium">{{if .AdminName}}{{.AdminName}}{{else}}Admin{{end}}</span></div>
         <form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{.CSRF}}"><button class="icon-btn" type="submit" aria-label="Sign out" title="Sign out"><svg class="ic"><use href="#i-logout"/></svg></button></form>
